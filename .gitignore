@@ -1,0 +1,15 @@
+build/
+.gradle/
+*.jar
+*.ipr
+*.iws
+*.iml
+.classpath
+.project
+.settings/
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store

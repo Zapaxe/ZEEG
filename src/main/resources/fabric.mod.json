@@ -1,0 +1,25 @@
+{
+    "schemaVersion": 1,
+    "id": "zeeg",
+    "version": "${version}",
+    "name": "Zap's Enhanced Enchantment Glints",
+    "description": "Customizes enchantment glint colors without resource packs.",
+    "authors": ["zapaxe"],
+    "contact": {},
+    "license": "MIT",
+    "environment": "client",
+    "entrypoints": {
+        "main": ["com.zapaxe.zeeg.ZEEG"],
+        "modmenu": ["com.zapaxe.zeeg.modmenu.ModMenuIntegration"]
+    },
+    "mixins": ["zeeg.mixins.json"],
+    "depends": {
+        "fabricloader": ">=0.15.0",
+        "minecraft": "~1.21.11",
+        "fabric-api": "*",
+        "java": ">=21"
+    },
+    "suggests": {
+        "modmenu": "*"
+    }
+}
