@@ -6,6 +6,8 @@ import com.zapaxe.zeeg.ZEEG;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 import net.fabricmc.loader.api.FabricLoader;
 
 public class GlintConfig {
@@ -14,6 +16,7 @@ public class GlintConfig {
     private static int red = 150;
     private static int green = 75;
     private static int blue = 200;
+    private static final List<NamedColor> namedColors = new ArrayList<>();
 
     public static int getRed() { return red; }
     public static int getGreen() { return green; }
@@ -23,6 +26,8 @@ public class GlintConfig {
     public static void setGreen(int g) { green = clamp(g); }
     public static void setBlue(int b) { blue = clamp(b); }
 
+    public static List<NamedColor> getNamedColors() { return namedColors; }
+
     private static int clamp(int v) { return Math.max(0, Math.min(255, v)); }
 
     public static String getShaderVec4() {
@@ -30,6 +35,14 @@ public class GlintConfig {
         float g = green / 255.0f;
         float b = blue / 255.0f;
         return String.format("%.2f, %.2f, %.2f", r, g, b);
+    }
+
+    public static NamedColor matchName(String customName) {
+        if (customName == null || customName.isEmpty()) return null;
+        for (NamedColor nc : namedColors) {
+            if (nc.name.equals(customName)) return nc;
+        }
+        return null;
     }
 
     public static void load() {
@@ -41,6 +54,10 @@ public class GlintConfig {
                         red = clamp(data.red);
                         green = clamp(data.green);
                         blue = clamp(data.blue);
+                        namedColors.clear();
+                        if (data.namedColors != null) {
+                            namedColors.addAll(data.namedColors);
+                        }
                     }
                 }
             }
@@ -53,15 +70,36 @@ public class GlintConfig {
         try {
             Files.createDirectories(PATH.getParent());
             try (java.io.Writer writer = Files.newBufferedWriter(PATH)) {
-                GSON.toJson(new Data(red, green, blue), writer);
+                GSON.toJson(new Data(red, green, blue, namedColors), writer);
             }
         } catch (IOException e) {
             ZEEG.LOGGER.error("Failed to save config", e);
         }
     }
 
+    public static class NamedColor {
+        String name;
+        int red, green, blue;
+        NamedColor() {}
+        public NamedColor(String name, int r, int g, int b) {
+            this.name = name; red = r; green = g; blue = b;
+        }
+        public String getName() { return name; }
+        public void setName(String n) { name = n; }
+        public int getRed() { return red; }
+        public int getGreen() { return green; }
+        public int getBlue() { return blue; }
+        public void setRed(int r) { red = clamp(r); }
+        public void setGreen(int g) { green = clamp(g); }
+        public void setBlue(int b) { blue = clamp(b); }
+    }
+
     private static class Data {
         int red, green, blue;
-        Data(int r, int g, int b) { red = r; green = g; blue = b; }
+        List<NamedColor> namedColors;
+        Data() {}
+        Data(int r, int g, int b, List<NamedColor> nc) {
+            red = r; green = g; blue = b; namedColors = nc;
+        }
     }
 }
