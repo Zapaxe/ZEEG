@@ -23,6 +23,7 @@ ZEEG supports multiple Minecraft versions:
 
 - 1.21.11
 - 26.1.x
+- 26.2.x
 
 ## Usage
 
