@@ -49,6 +49,11 @@ public class GlintConfigScreen extends Screen {
     private boolean rainbow = GlintConfig.getFileRainbow();
     private int rainbowSpeed = GlintConfig.getFileRainbowSpeed();
     private SpeedSlider speedSlider;
+    private int cycleMode = GlintConfig.getFileCycleMode();
+    private int red2 = GlintConfig.getFileRed2();
+    private int green2 = GlintConfig.getFileGreen2();
+    private int blue2 = GlintConfig.getFileBlue2();
+    private int editingColorIndex = 0; // 0 for A (primary), 1 for B (secondary)
 
     // Popup Color Picker State & Widgets
     private boolean showPopup = false;
@@ -62,6 +67,11 @@ public class GlintConfigScreen extends Screen {
     private int popupStrength = 255;
     private boolean popupRainbow = false;
     private int popupRainbowSpeed = 25;
+    private int popupCycleMode = 0;
+    private int popupRed2 = 255;
+    private int popupGreen2 = 255;
+    private int popupBlue2 = 255;
+    private int popupEditingColorIndex = 0; // 0 for A (primary), 1 for B (secondary)
     private TextFieldWidget popupRedField;
     private TextFieldWidget popupGreenField;
     private TextFieldWidget popupBlueField;
@@ -80,40 +90,63 @@ public class GlintConfigScreen extends Screen {
         int cy = height / 2;
 
         if (showPopup) {
-            if (popupRainbow) {
+            String modeName = "Static";
+            if (popupCycleMode == 1) modeName = "Rainbow";
+            else if (popupCycleMode == 2) modeName = "Duo-Tone";
+
+            ButtonWidget popupModeBtn = ButtonWidget.builder(Text.literal(modeName), btn -> {
+                popupCycleMode = (popupCycleMode + 1) % 3;
+                popupRainbow = (popupCycleMode == 1);
+                popupEditingColorIndex = 0;
+                rebuild();
+            }).dimensions(cx - 110, cy + 60, 60, 20).build();
+            addDrawableChild(popupModeBtn);
+
+            if (popupCycleMode == 1) {
                 popupSpeedSlider = new SpeedSlider(cx - 110, cy - 15, 60, 20, popupRainbowSpeed, () -> popupRainbowSpeed = popupSpeedSlider.getIntValue());
                 addDrawableChild(popupSpeedSlider);
             } else {
-                // Popup Inputs
+                int rVal = (popupEditingColorIndex == 0) ? popupRed : popupRed2;
+                int gVal = (popupEditingColorIndex == 0) ? popupGreen : popupGreen2;
+                int bVal = (popupEditingColorIndex == 0) ? popupBlue : popupBlue2;
+
                 popupRedField = new TextFieldWidget(textRenderer, cx - 110, cy - 65, 60, 20, Text.literal("Red"));
-                popupRedField.setText(String.valueOf(popupRed));
+                popupRedField.setText(String.valueOf(rVal));
                 popupRedField.setChangedListener(s -> updatePopupFromRgbFields());
                 addDrawableChild(popupRedField);
 
                 popupGreenField = new TextFieldWidget(textRenderer, cx - 110, cy - 40, 60, 20, Text.literal("Green"));
-                popupGreenField.setText(String.valueOf(popupGreen));
+                popupGreenField.setText(String.valueOf(gVal));
                 popupGreenField.setChangedListener(s -> updatePopupFromRgbFields());
                 addDrawableChild(popupGreenField);
 
                 popupBlueField = new TextFieldWidget(textRenderer, cx - 110, cy - 15, 60, 20, Text.literal("Blue"));
-                popupBlueField.setText(String.valueOf(popupBlue));
+                popupBlueField.setText(String.valueOf(bVal));
                 popupBlueField.setChangedListener(s -> updatePopupFromRgbFields());
                 addDrawableChild(popupBlueField);
 
                 popupHexField = new TextFieldWidget(textRenderer, cx - 110, cy + 10, 60, 20, Text.literal("Hex"));
-                popupHexField.setText(toHex(popupRed, popupGreen, popupBlue));
+                popupHexField.setText(toHex(rVal, gVal, bVal));
                 popupHexField.setChangedListener(s -> updatePopupFromHexField());
                 addDrawableChild(popupHexField);
+
+                if (popupCycleMode == 2) {
+                    ButtonWidget colorToggleBtn = ButtonWidget.builder(
+                        Text.literal(popupEditingColorIndex == 0 ? "Color: Primary" : "Color: Secondary"),
+                        btn -> {
+                            popupEditingColorIndex = 1 - popupEditingColorIndex;
+                            rebuild();
+                        }
+                    ).dimensions(cx + 30, cy + 10, 115, 20).build();
+                    addDrawableChild(colorToggleBtn);
+
+                    popupSpeedSlider = new SpeedSlider(cx + 30, cy + 35, 115, 20, popupRainbowSpeed, () -> popupRainbowSpeed = popupSpeedSlider.getIntValue());
+                    addDrawableChild(popupSpeedSlider);
+                }
             }
 
             popupStrSlider = new StrengthSlider(cx - 110, cy + 35, 60, 20, popupStrength, () -> popupStrength = popupStrSlider.getIntValue());
             addDrawableChild(popupStrSlider);
-
-            ButtonWidget popupRainbowBtn = ButtonWidget.builder(Text.literal(popupRainbow ? "ON" : "OFF"), btn -> {
-                popupRainbow = !popupRainbow;
-                rebuild();
-            }).dimensions(cx - 110, cy + 60, 60, 20).build();
-            addDrawableChild(popupRainbowBtn);
 
             // Popup Preset Buttons
             int py = cy - 65;
@@ -160,40 +193,64 @@ public class GlintConfigScreen extends Screen {
             addDrawableChild(tab3);
 
             if (activeTab == 0) {
-                if (rainbow) {
+                String modeName = "Static";
+                if (cycleMode == 1) modeName = "Rainbow";
+                else if (cycleMode == 2) modeName = "Duo-Tone";
+
+                ButtonWidget modeBtn = ButtonWidget.builder(Text.literal(modeName), btn -> {
+                    cycleMode = (cycleMode + 1) % 3;
+                    rainbow = (cycleMode == 1);
+                    editingColorIndex = 0;
+                    rebuild();
+                }).dimensions(cx - 130, 195, 80, 20).build();
+                addDrawableChild(modeBtn);
+
+                if (cycleMode == 1) {
                     speedSlider = new SpeedSlider(cx - 130, 95, 80, 20, rainbowSpeed, () -> rainbowSpeed = speedSlider.getIntValue());
                     addDrawableChild(speedSlider);
                 } else {
                     // General Settings Layout
+                    int rVal = (editingColorIndex == 0) ? red : red2;
+                    int gVal = (editingColorIndex == 0) ? green : green2;
+                    int bVal = (editingColorIndex == 0) ? blue : blue2;
+
                     redField = new TextFieldWidget(textRenderer, cx - 130, 70, 80, 20, Text.literal("Red"));
-                    redField.setText(String.valueOf(red));
+                    redField.setText(String.valueOf(rVal));
                     redField.setChangedListener(s -> updateFromRgbFields());
                     addDrawableChild(redField);
 
                     greenField = new TextFieldWidget(textRenderer, cx - 130, 95, 80, 20, Text.literal("Green"));
-                    greenField.setText(String.valueOf(green));
+                    greenField.setText(String.valueOf(gVal));
                     greenField.setChangedListener(s -> updateFromRgbFields());
                     addDrawableChild(greenField);
 
                     blueField = new TextFieldWidget(textRenderer, cx - 130, 120, 80, 20, Text.literal("Blue"));
-                    blueField.setText(String.valueOf(blue));
+                    blueField.setText(String.valueOf(bVal));
                     blueField.setChangedListener(s -> updateFromRgbFields());
                     addDrawableChild(blueField);
 
                     hexField = new TextFieldWidget(textRenderer, cx - 130, 145, 80, 20, Text.literal("Hex"));
-                    hexField.setText(toHex(red, green, blue));
+                    hexField.setText(toHex(rVal, gVal, bVal));
                     hexField.setChangedListener(s -> updateFromHexField());
                     addDrawableChild(hexField);
+
+                    if (cycleMode == 2) {
+                        ButtonWidget colorToggleBtn = ButtonWidget.builder(
+                            Text.literal(editingColorIndex == 0 ? "Color: Primary" : "Color: Secondary"),
+                            btn -> {
+                                editingColorIndex = 1 - editingColorIndex;
+                                rebuild();
+                            }
+                        ).dimensions(cx + 45, 145, 120, 20).build();
+                        addDrawableChild(colorToggleBtn);
+
+                        speedSlider = new SpeedSlider(cx + 45, 170, 120, 20, rainbowSpeed, () -> rainbowSpeed = speedSlider.getIntValue());
+                        addDrawableChild(speedSlider);
+                    }
                 }
 
                 strengthSlider = new StrengthSlider(cx - 130, 170, 80, 20, strength, () -> strength = strengthSlider.getIntValue());
                 addDrawableChild(strengthSlider);
-
-                ButtonWidget rainbowBtn = ButtonWidget.builder(Text.literal(rainbow ? "ON" : "OFF"), btn -> {
-                    rainbow = !rainbow;
-                    rebuild();
-                }).dimensions(cx - 130, 195, 80, 20).build();
-                addDrawableChild(rainbowBtn);
 
                 // Main Presets
                 int py = 70;
@@ -396,6 +453,11 @@ public class GlintConfigScreen extends Screen {
         popupStrength = strength;
         popupRainbow = rainbow;
         popupRainbowSpeed = rainbowSpeed;
+        popupCycleMode = cycleMode;
+        popupRed2 = red2;
+        popupGreen2 = green2;
+        popupBlue2 = blue2;
+        popupEditingColorIndex = 0;
         showPopup = true;
         nameField.setText("");
         rebuild();
@@ -418,6 +480,11 @@ public class GlintConfigScreen extends Screen {
         popupStrength = strength;
         popupRainbow = rainbow;
         popupRainbowSpeed = rainbowSpeed;
+        popupCycleMode = cycleMode;
+        popupRed2 = red2;
+        popupGreen2 = green2;
+        popupBlue2 = blue2;
+        popupEditingColorIndex = 0;
         showPopup = true;
         itemField.setText("");
         tempSearchQuery = "";
@@ -481,6 +548,11 @@ public class GlintConfigScreen extends Screen {
                         popupStrength = ic.getStrength();
                         popupRainbow = ic.isRainbow();
                         popupRainbowSpeed = ic.getRainbowSpeed();
+                        popupCycleMode = ic.getCycleMode();
+                        popupRed2 = ic.getRed2();
+                        popupGreen2 = ic.getGreen2();
+                        popupBlue2 = ic.getBlue2();
+                        popupEditingColorIndex = 0;
                         showPopup = true;
                         rebuild();
                         return true;
@@ -504,6 +576,11 @@ public class GlintConfigScreen extends Screen {
                         popupStrength = nc.getStrength();
                         popupRainbow = nc.isRainbow();
                         popupRainbowSpeed = nc.getRainbowSpeed();
+                        popupCycleMode = nc.getCycleMode();
+                        popupRed2 = nc.getRed2();
+                        popupGreen2 = nc.getGreen2();
+                        popupBlue2 = nc.getBlue2();
+                        popupEditingColorIndex = 0;
                         showPopup = true;
                         rebuild();
                         return true;
@@ -524,6 +601,10 @@ public class GlintConfigScreen extends Screen {
                 ic.setStrength(popupStrength);
                 ic.setRainbow(popupRainbow);
                 ic.setRainbowSpeed(popupRainbowSpeed);
+                ic.setCycleMode(popupCycleMode);
+                ic.setRed2(popupRed2);
+                ic.setGreen2(popupGreen2);
+                ic.setBlue2(popupBlue2);
             } else {
                 GlintConfig.NamedColor nc = GlintConfig.getNamedColors().get(popupEditIndex);
                 nc.setRed(popupRed);
@@ -532,12 +613,16 @@ public class GlintConfigScreen extends Screen {
                 nc.setStrength(popupStrength);
                 nc.setRainbow(popupRainbow);
                 nc.setRainbowSpeed(popupRainbowSpeed);
+                nc.setCycleMode(popupCycleMode);
+                nc.setRed2(popupRed2);
+                nc.setGreen2(popupGreen2);
+                nc.setBlue2(popupBlue2);
             }
         } else {
             if (popupIsItem) {
-                GlintConfig.getItemColors().add(new GlintConfig.ItemColor(popupName, popupRed, popupGreen, popupBlue, popupStrength, popupRainbow, popupRainbowSpeed));
+                GlintConfig.getItemColors().add(new GlintConfig.ItemColor(popupName, popupRed, popupGreen, popupBlue, popupStrength, popupRainbow, popupRainbowSpeed, popupCycleMode, popupRed2, popupGreen2, popupBlue2));
             } else {
-                GlintConfig.getNamedColors().add(new GlintConfig.NamedColor(popupName, popupRed, popupGreen, popupBlue, popupStrength, popupRainbow, popupRainbowSpeed));
+                GlintConfig.getNamedColors().add(new GlintConfig.NamedColor(popupName, popupRed, popupGreen, popupBlue, popupStrength, popupRainbow, popupRainbowSpeed, popupCycleMode, popupRed2, popupGreen2, popupBlue2));
             }
         }
         showPopup = false;
@@ -552,7 +637,11 @@ public class GlintConfigScreen extends Screen {
     private void setColor(int r, int g, int b) {
         if (updating) return;
         updating = true;
-        red = r; green = g; blue = b;
+        if (editingColorIndex == 0) {
+            red = r; green = g; blue = b;
+        } else {
+            red2 = r; green2 = g; blue2 = b;
+        }
         if (redField != null) redField.setText(String.valueOf(r));
         if (greenField != null) greenField.setText(String.valueOf(g));
         if (blueField != null) blueField.setText(String.valueOf(b));
@@ -563,11 +652,15 @@ public class GlintConfigScreen extends Screen {
     private void setPopupColor(int r, int g, int b) {
         if (updating) return;
         updating = true;
-        popupRed = r; popupGreen = g; popupBlue = b;
-        popupRedField.setText(String.valueOf(r));
-        popupGreenField.setText(String.valueOf(g));
-        popupBlueField.setText(String.valueOf(b));
-        popupHexField.setText(toHex(r, g, b));
+        if (popupEditingColorIndex == 0) {
+            popupRed = r; popupGreen = g; popupBlue = b;
+        } else {
+            popupRed2 = r; popupGreen2 = g; popupBlue2 = b;
+        }
+        if (popupRedField != null) popupRedField.setText(String.valueOf(r));
+        if (popupGreenField != null) popupGreenField.setText(String.valueOf(g));
+        if (popupBlueField != null) popupBlueField.setText(String.valueOf(b));
+        if (popupHexField != null) popupHexField.setText(toHex(r, g, b));
         updating = false;
     }
 
@@ -582,7 +675,11 @@ public class GlintConfigScreen extends Screen {
             int r = clamp(Integer.parseInt(redField.getText()));
             int g = clamp(Integer.parseInt(greenField.getText()));
             int b = clamp(Integer.parseInt(blueField.getText()));
-            red = r; green = g; blue = b;
+            if (editingColorIndex == 0) {
+                red = r; green = g; blue = b;
+            } else {
+                red2 = r; green2 = g; blue2 = b;
+            }
             hexField.setText(toHex(r, g, b));
         } catch (NumberFormatException ignored) {}
         updating = false;
@@ -601,7 +698,11 @@ public class GlintConfigScreen extends Screen {
                 int r = (color >> 16) & 0xFF;
                 int g = (color >> 8) & 0xFF;
                 int b = color & 0xFF;
-                red = r; green = g; blue = b;
+                if (editingColorIndex == 0) {
+                    red = r; green = g; blue = b;
+                } else {
+                    red2 = r; green2 = g; blue2 = b;
+                }
                 redField.setText(String.valueOf(r));
                 greenField.setText(String.valueOf(g));
                 blueField.setText(String.valueOf(b));
@@ -617,7 +718,11 @@ public class GlintConfigScreen extends Screen {
             int r = clamp(Integer.parseInt(popupRedField.getText()));
             int g = clamp(Integer.parseInt(popupGreenField.getText()));
             int b = clamp(Integer.parseInt(popupBlueField.getText()));
-            popupRed = r; popupGreen = g; popupBlue = b;
+            if (popupEditingColorIndex == 0) {
+                popupRed = r; popupGreen = g; popupBlue = b;
+            } else {
+                popupRed2 = r; popupGreen2 = g; popupBlue2 = b;
+            }
             popupHexField.setText(toHex(r, g, b));
         } catch (NumberFormatException ignored) {}
         updating = false;
@@ -636,7 +741,11 @@ public class GlintConfigScreen extends Screen {
                 int r = (color >> 16) & 0xFF;
                 int g = (color >> 8) & 0xFF;
                 int b = color & 0xFF;
-                popupRed = r; popupGreen = g; popupBlue = b;
+                if (popupEditingColorIndex == 0) {
+                    popupRed = r; popupGreen = g; popupBlue = b;
+                } else {
+                    popupRed2 = r; popupGreen2 = g; popupBlue2 = b;
+                }
                 popupRedField.setText(String.valueOf(r));
                 popupGreenField.setText(String.valueOf(g));
                 popupBlueField.setText(String.valueOf(b));
@@ -652,6 +761,10 @@ public class GlintConfigScreen extends Screen {
         GlintConfig.setStrength(strength);
         GlintConfig.setRainbow(rainbow);
         GlintConfig.setRainbowSpeed(rainbowSpeed);
+        GlintConfig.setCycleMode(cycleMode);
+        GlintConfig.setRed2(red2);
+        GlintConfig.setGreen2(green2);
+        GlintConfig.setBlue2(blue2);
         GlintConfig.save();
         MinecraftClient.getInstance().reloadResources();
         close();
@@ -665,8 +778,28 @@ public class GlintConfigScreen extends Screen {
         GlintConfig.setStrength(strength);
         GlintConfig.setRainbow(rainbow);
         GlintConfig.setRainbowSpeed(rainbowSpeed);
+        GlintConfig.setCycleMode(cycleMode);
+        GlintConfig.setRed2(red2);
+        GlintConfig.setGreen2(green2);
+        GlintConfig.setBlue2(blue2);
         GlintConfig.save();
         client.setScreen(parent);
+    }
+
+    private int getCycleColor(int mode, int r1, int g1, int b1, int r2, int g2, int b2, int speed) {
+        long time = System.currentTimeMillis();
+        if (mode == 1) {
+            float hue = (float) (((time * speed) % 100000L) / 100000.0);
+            return hsvToRgbInt(hue, 1.0f, 1.0f);
+        } else if (mode == 2) {
+            double factor = (time * speed / 100000.0) * 2.0 * Math.PI;
+            double t = 0.5 + 0.5 * Math.sin(factor);
+            int r = (int) Math.round(r1 * (1 - t) + r2 * t);
+            int g = (int) Math.round(g1 * (1 - t) + g2 * t);
+            int b = (int) Math.round(b1 * (1 - t) + b2 * t);
+            return (clamp(r) << 16) | (clamp(g) << 8) | clamp(b);
+        }
+        return (clamp(r1) << 16) | (clamp(g1) << 8) | clamp(b1);
     }
 
     @Override
@@ -689,7 +822,7 @@ public class GlintConfigScreen extends Screen {
                 Text.literal("Pick Color for: " + nameText).formatted(Formatting.YELLOW), cx, cy - 85, 0xFFFFFFFF);
 
             // Labels for fields
-            if (popupRainbow) {
+            if (popupCycleMode == 1) {
                 ctx.drawTextWithShadow(textRenderer, Text.literal("Spd:"), cx - 137, cy - 11, 0xFFFFFFFF);
             } else {
                 ctx.drawTextWithShadow(textRenderer, Text.literal("R:"), cx - 130, cy - 61, 0xFFFF5555);
@@ -698,17 +831,10 @@ public class GlintConfigScreen extends Screen {
                 ctx.drawTextWithShadow(textRenderer, Text.literal("Hex:"), cx - 137, cy + 14, 0xFFFFFFFF);
             }
             ctx.drawTextWithShadow(textRenderer, Text.literal("Str:"), cx - 137, cy + 39, 0xFFFFFFFF);
-            ctx.drawTextWithShadow(textRenderer, Text.literal("Rain:"), cx - 142, cy + 64, 0xFFFFFFFF);
+            ctx.drawTextWithShadow(textRenderer, Text.literal("Mode:"), cx - 142, cy + 64, 0xFFFFFFFF);
 
             // Color Preview Box
-            int previewColor;
-            if (popupRainbow) {
-                long time = System.currentTimeMillis();
-                float hue = (float) (((time * popupRainbowSpeed) % 100000L) / 100000.0);
-                previewColor = 0xFF000000 | hsvToRgbInt(hue, 1.0f, 1.0f);
-            } else {
-                previewColor = 0xFF000000 | (clamp(popupRed) << 16) | (clamp(popupGreen) << 8) | clamp(popupBlue);
-            }
+            int previewColor = 0xFF000000 | getCycleColor(popupCycleMode, popupRed, popupGreen, popupBlue, popupRed2, popupGreen2, popupBlue2, popupRainbowSpeed);
             ctx.fill(cx - 40, cy - 65, cx + 20, cy + 55, previewColor);
             ctx.drawStrokedRectangle(cx - 40, cy - 65, 60, 120, 0xFF888888);
 
@@ -721,7 +847,7 @@ public class GlintConfigScreen extends Screen {
                 ctx.fill(cx - 180, 60, cx + 180, 220, 0x55000000);
                 ctx.drawStrokedRectangle(cx - 180, 60, 360, 160, 0xFF555555);
 
-                if (rainbow) {
+                if (cycleMode == 1) {
                     ctx.drawTextWithShadow(textRenderer, Text.literal("Spd:"), cx - 172, 99, 0xFFFFFFFF);
                 } else {
                     ctx.drawTextWithShadow(textRenderer, Text.literal("R:"), cx - 170, 74, 0xFFFF5555);
@@ -730,16 +856,9 @@ public class GlintConfigScreen extends Screen {
                     ctx.drawTextWithShadow(textRenderer, Text.literal("Hex:"), cx - 175, 149, 0xFFFFFFFF);
                 }
                 ctx.drawTextWithShadow(textRenderer, Text.literal("Str:"), cx - 172, 174, 0xFFFFFFFF);
-                ctx.drawTextWithShadow(textRenderer, Text.literal("Rain:"), cx - 172, 199, 0xFFFFFFFF);
+                ctx.drawTextWithShadow(textRenderer, Text.literal("Mode:"), cx - 172, 199, 0xFFFFFFFF);
 
-                int previewColor;
-                if (rainbow) {
-                    long time = System.currentTimeMillis();
-                    float hue = (float) (((time * rainbowSpeed) % 100000L) / 100000.0);
-                    previewColor = 0xFF000000 | hsvToRgbInt(hue, 1.0f, 1.0f);
-                } else {
-                    previewColor = 0xFF000000 | (clamp(red) << 16) | (clamp(green) << 8) | clamp(blue);
-                }
+                int previewColor = 0xFF000000 | getCycleColor(cycleMode, red, green, blue, red2, green2, blue2, rainbowSpeed);
                 ctx.fill(cx - 40, 70, cx + 30, 190, previewColor);
                 ctx.drawStrokedRectangle(cx - 40, 70, 70, 120, 0xFF555555);
 
@@ -759,14 +878,7 @@ public class GlintConfigScreen extends Screen {
                 for (int i = startIdx; i < endIdx; i++) {
                     GlintConfig.ItemColor ic = items.get(i);
                     int ey = 95 + (i - startIdx) * 22;
-                    int colorVal;
-                    if (ic.isRainbow()) {
-                        long time = System.currentTimeMillis();
-                        float hue = (float) (((time * ic.getRainbowSpeed()) % 100000L) / 100000.0);
-                        colorVal = 0xFF000000 | hsvToRgbInt(hue, 1.0f, 1.0f);
-                    } else {
-                        colorVal = 0xFF000000 | (ic.getRed() << 16) | (ic.getGreen() << 8) | ic.getBlue();
-                    }
+                    int colorVal = 0xFF000000 | getCycleColor(ic.getCycleMode(), ic.getRed(), ic.getGreen(), ic.getBlue(), ic.getRed2(), ic.getGreen2(), ic.getBlue2(), ic.getRainbowSpeed());
                     ctx.drawStrokedRectangle(cx - 100, ey + 3, 14, 14, 0xFF888888);
                     ctx.fill(cx - 99, ey + 4, cx - 87, ey + 16, colorVal);
                 }
@@ -787,14 +899,7 @@ public class GlintConfigScreen extends Screen {
                 for (int i = startIdx; i < endIdx; i++) {
                     GlintConfig.NamedColor nc = named.get(i);
                     int ey = 95 + (i - startIdx) * 22;
-                    int colorVal;
-                    if (nc.isRainbow()) {
-                        long time = System.currentTimeMillis();
-                        float hue = (float) (((time * nc.getRainbowSpeed()) % 100000L) / 100000.0);
-                        colorVal = 0xFF000000 | hsvToRgbInt(hue, 1.0f, 1.0f);
-                    } else {
-                        colorVal = 0xFF000000 | (nc.getRed() << 16) | (nc.getGreen() << 8) | nc.getBlue();
-                    }
+                    int colorVal = 0xFF000000 | getCycleColor(nc.getCycleMode(), nc.getRed(), nc.getGreen(), nc.getBlue(), nc.getRed2(), nc.getGreen2(), nc.getBlue2(), nc.getRainbowSpeed());
                     ctx.drawStrokedRectangle(cx - 100, ey + 3, 14, 14, 0xFF888888);
                     ctx.fill(cx - 99, ey + 4, cx - 87, ey + 16, colorVal);
                 }

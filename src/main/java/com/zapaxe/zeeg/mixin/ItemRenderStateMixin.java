@@ -18,11 +18,11 @@ public abstract class ItemRenderStateMixin implements NamedColorAccess {
     private int[] zeeg$namedColor;
 
     @Override
-    public void zeeg$setNamedColor(int r, int g, int b, int strength, boolean rainbow, int speed) {
+    public void zeeg$setNamedColor(int r, int g, int b, int strength, boolean rainbow, int speed, int mode, int r2, int g2, int b2) {
         if (r == -1) {
             this.zeeg$namedColor = null;
         } else {
-            this.zeeg$namedColor = new int[]{r, g, b, strength, rainbow ? 1 : 0, speed};
+            this.zeeg$namedColor = new int[]{r, g, b, strength, rainbow ? 1 : 0, speed, mode, r2, g2, b2};
         }
     }
 
@@ -35,7 +35,12 @@ public abstract class ItemRenderStateMixin implements NamedColorAccess {
     private void zeeg$setGlintColorOnRender(MatrixStack matrices, OrderedRenderCommandQueue renderCommands, int light, int overlay, int seed, CallbackInfo ci) {
         int[] color = this.zeeg$namedColor;
         if (color == null) {
-            color = new int[]{GlintConfig.getRed(), GlintConfig.getGreen(), GlintConfig.getBlue(), GlintConfig.getStrength(), GlintConfig.getRainbow() ? 1 : 0, GlintConfig.getRainbowSpeed()};
+            color = new int[]{
+                GlintConfig.getRed(), GlintConfig.getGreen(), GlintConfig.getBlue(), 
+                GlintConfig.getStrength(), GlintConfig.getRainbow() ? 1 : 0, 
+                GlintConfig.getRainbowSpeed(), GlintConfig.getCycleMode(), 
+                GlintConfig.getRed2(), GlintConfig.getGreen2(), GlintConfig.getBlue2()
+            };
         }
         ZeegRenderHooks.GLINT_COLOR.set(color);
     }
