@@ -1,5 +1,6 @@
 {
     "schemaVersion": 1,
+    "icon": "assets/zeeg/icon.png",
     "id": "zeeg",
     "version": "${version}",
     "name": "Zap's Enhanced Enchantment Glints",
