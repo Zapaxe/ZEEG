@@ -22,6 +22,7 @@ public class GlintConfigScreen extends Screen {
     private int activeTab = 0;
     private int itemPage = 0;
     private int namedPage = 0;
+    private int packPage = 0;
 
     // Main Tab Widgets
     private TextFieldWidget redField;
@@ -39,13 +40,15 @@ public class GlintConfigScreen extends Screen {
     
     // Config State
     private boolean updating = false;
-    private int red = GlintConfig.getRed();
-    private int green = GlintConfig.getGreen();
-    private int blue = GlintConfig.getBlue();
+    private int red = GlintConfig.getFileRed();
+    private int green = GlintConfig.getFileGreen();
+    private int blue = GlintConfig.getFileBlue();
 
     // Popup Color Picker State & Widgets
     private boolean showPopup = false;
     private boolean popupIsItem = false;
+    private boolean popupIsEdit = false;
+    private int popupEditIndex = -1;
     private String popupName = "";
     private int popupRed = 255;
     private int popupGreen = 255;
@@ -122,10 +125,14 @@ public class GlintConfigScreen extends Screen {
             tab0.active = (activeTab != 0);
             tab1.active = (activeTab != 1);
             tab2.active = (activeTab != 2);
+            ButtonWidget tab3 = ButtonWidget.builder(Text.literal("Pack Configs"), btn -> { activeTab = 3; rebuild(); })
+                .dimensions(cx + 160, 22, 100, 20).build();
+            tab3.active = (activeTab != 3);
 
             addDrawableChild(tab0);
             addDrawableChild(tab1);
             addDrawableChild(tab2);
+            addDrawableChild(tab3);
 
             if (activeTab == 0) {
                 // General Settings Layout
@@ -169,6 +176,7 @@ public class GlintConfigScreen extends Screen {
             } else if (activeTab == 1) {
                 // Item Specific Override Tab
                 itemField = new TextFieldWidget(textRenderer, cx - 100, 65, 145, 20, Text.literal("Item ID"));
+                itemField.setMaxLength(256);
                 itemField.setPlaceholder(Text.literal("e.g. netherite_helmet"));
                 if (tempSearchQuery != null && !tempSearchQuery.isEmpty()) {
                     itemField.setText(tempSearchQuery);
@@ -273,6 +281,55 @@ public class GlintConfigScreen extends Screen {
                     addDrawableChild(ButtonWidget.builder(Text.literal(">"), btn -> { if ((namedPage + 1) * 5 < named.size()) { namedPage++; rebuild(); } })
                         .dimensions(cx + 30, 210, 20, 20).build());
                 }
+
+            } else if (activeTab == 3) {
+                // Pack Configs Tab
+                addDrawableChild(ButtonWidget.builder(
+                    Text.literal("Master: " + (GlintConfig.isPackOverridesEnabled() ? "ON" : "OFF")),
+                    btn -> {
+                        GlintConfig.setPackOverridesEnabled(!GlintConfig.isPackOverridesEnabled());
+                        rebuild();
+                    }
+                ).dimensions(cx - 100, 65, 155, 20).build());
+
+                List<GlintConfig.PackData> packs = GlintConfig.getPacksData();
+                int maxPages = (packs.size() - 1) / 5;
+                if (packPage > maxPages) packPage = Math.max(0, maxPages);
+
+                int startIdx = packPage * 5;
+                int endIdx = Math.min(packs.size(), startIdx + 5);
+
+                for (int i = startIdx; i < endIdx; i++) {
+                    int idx = i;
+                    GlintConfig.PackData pd = packs.get(i);
+                    int ey = 95 + (i - startIdx) * 22;
+
+                    String dispName = pd.getPackId();
+                    if (dispName.length() > 18) {
+                        dispName = dispName.substring(0, 16) + "..";
+                    }
+
+                    boolean enabled = GlintConfig.isPackEnabled(pd.getPackId());
+                    addDrawableChild(ButtonWidget.builder(
+                        Text.literal(dispName),
+                        btn -> {}
+                    ).dimensions(cx - 80, ey, 125, 20).build());
+
+                    addDrawableChild(ButtonWidget.builder(
+                        Text.literal(enabled ? "ON" : "OFF"),
+                        btn -> {
+                            GlintConfig.setPackEnabled(pd.getPackId(), !GlintConfig.isPackEnabled(pd.getPackId()));
+                            rebuild();
+                        }
+                    ).dimensions(cx + 50, ey, 50, 20).build());
+                }
+
+                if (packs.size() > 5) {
+                    addDrawableChild(ButtonWidget.builder(Text.literal("<"), btn -> { if (packPage > 0) { packPage--; rebuild(); } })
+                        .dimensions(cx - 50, 210, 20, 20).build());
+                    addDrawableChild(ButtonWidget.builder(Text.literal(">"), btn -> { if ((packPage + 1) * 5 < packs.size()) { packPage++; rebuild(); } })
+                        .dimensions(cx + 30, 210, 20, 20).build());
+                }
             }
 
             // Bottom controls
@@ -293,6 +350,7 @@ public class GlintConfigScreen extends Screen {
         if (name.isEmpty()) return;
         popupName = name;
         popupIsItem = false;
+        popupIsEdit = false;
         popupRed = red;
         popupGreen = green;
         popupBlue = blue;
@@ -308,11 +366,10 @@ public class GlintConfigScreen extends Screen {
             itemId = "minecraft:" + itemId;
         }
         Identifier id = Identifier.tryParse(itemId);
-        if (id == null || !Registries.ITEM.containsId(id)) {
-            return;
-        }
+        if (id == null) return;
         popupName = itemId;
         popupIsItem = true;
+        popupIsEdit = false;
         popupRed = red;
         popupGreen = green;
         popupBlue = blue;
@@ -359,14 +416,72 @@ public class GlintConfigScreen extends Screen {
             }
             searchMatches.clear();
         }
+        if (!showPopup) {
+            int cx = width / 2;
+            if (activeTab == 1) {
+                List<GlintConfig.ItemColor> items = GlintConfig.getItemColors();
+                int startIdx = itemPage * 5;
+                int endIdx = Math.min(items.size(), startIdx + 5);
+                for (int i = startIdx; i < endIdx; i++) {
+                    int ey = 95 + (i - startIdx) * 22;
+                    if (mx >= cx - 101 && mx <= cx - 85 && my >= ey + 2 && my <= ey + 18) {
+                        GlintConfig.ItemColor ic = items.get(i);
+                        popupName = ic.getItemId();
+                        popupIsItem = true;
+                        popupIsEdit = true;
+                        popupEditIndex = i;
+                        popupRed = ic.getRed();
+                        popupGreen = ic.getGreen();
+                        popupBlue = ic.getBlue();
+                        showPopup = true;
+                        rebuild();
+                        return true;
+                    }
+                }
+            } else if (activeTab == 2) {
+                List<GlintConfig.NamedColor> named = GlintConfig.getNamedColors();
+                int startIdx = namedPage * 5;
+                int endIdx = Math.min(named.size(), startIdx + 5);
+                for (int i = startIdx; i < endIdx; i++) {
+                    int ey = 95 + (i - startIdx) * 22;
+                    if (mx >= cx - 101 && mx <= cx - 85 && my >= ey + 2 && my <= ey + 18) {
+                        GlintConfig.NamedColor nc = named.get(i);
+                        popupName = nc.getName();
+                        popupIsItem = false;
+                        popupIsEdit = true;
+                        popupEditIndex = i;
+                        popupRed = nc.getRed();
+                        popupGreen = nc.getGreen();
+                        popupBlue = nc.getBlue();
+                        showPopup = true;
+                        rebuild();
+                        return true;
+                    }
+                }
+            }
+        }
         return super.mouseClicked(click, primary);
     }
 
     private void confirmPopup() {
-        if (popupIsItem) {
-            GlintConfig.getItemColors().add(new GlintConfig.ItemColor(popupName, popupRed, popupGreen, popupBlue));
+        if (popupIsEdit) {
+            if (popupIsItem) {
+                GlintConfig.ItemColor ic = GlintConfig.getItemColors().get(popupEditIndex);
+                ic.setRed(popupRed);
+                ic.setGreen(popupGreen);
+                ic.setBlue(popupBlue);
+            } else {
+                GlintConfig.NamedColor nc = GlintConfig.getNamedColors().get(popupEditIndex);
+                nc.setRed(popupRed);
+                nc.setGreen(popupGreen);
+                nc.setBlue(popupBlue);
+            }
         } else {
-            GlintConfig.getNamedColors().add(new GlintConfig.NamedColor(popupName, popupRed, popupGreen, popupBlue));
+            if (popupIsItem) {
+                GlintConfig.getItemColors().add(new GlintConfig.ItemColor(popupName, popupRed, popupGreen, popupBlue));
+            } else {
+                GlintConfig.getNamedColors().add(new GlintConfig.NamedColor(popupName, popupRed, popupGreen, popupBlue));
+            }
         }
         showPopup = false;
         rebuild();
@@ -577,6 +692,24 @@ public class GlintConfigScreen extends Screen {
                     GlintConfig.NamedColor nc = named.get(i);
                     int ey = 95 + (i - startIdx) * 22;
                     int colorVal = 0xFF000000 | (nc.getRed() << 16) | (nc.getGreen() << 8) | nc.getBlue();
+                    ctx.drawStrokedRectangle(cx - 100, ey + 3, 14, 14, 0xFF888888);
+                    ctx.fill(cx - 99, ey + 4, cx - 87, ey + 16, colorVal);
+                }
+
+            } else if (activeTab == 3) {
+                ctx.fill(cx - 120, 55, cx + 120, 235, 0x55000000);
+                ctx.drawStrokedRectangle(cx - 120, 55, 240, 180, 0xFF555555);
+                ctx.drawCenteredTextWithShadow(textRenderer,
+                    Text.literal("Resource Pack Configs").formatted(Formatting.BOLD, Formatting.GRAY), cx, 48, 0xFFFFFFFF);
+
+                List<GlintConfig.PackData> packs = GlintConfig.getPacksData();
+                int startIdx = packPage * 5;
+                int endIdx = Math.min(packs.size(), startIdx + 5);
+
+                for (int i = startIdx; i < endIdx; i++) {
+                    GlintConfig.PackData pd = packs.get(i);
+                    int ey = 95 + (i - startIdx) * 22;
+                    int colorVal = 0xFF000000 | (pd.getRed() << 16) | (pd.getGreen() << 8) | pd.getBlue();
                     ctx.drawStrokedRectangle(cx - 100, ey + 3, 14, 14, 0xFF888888);
                     ctx.fill(cx - 99, ey + 4, cx - 87, ey + 16, colorVal);
                 }
