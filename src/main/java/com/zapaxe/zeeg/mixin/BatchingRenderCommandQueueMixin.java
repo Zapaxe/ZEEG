@@ -22,7 +22,7 @@ public class BatchingRenderCommandQueueMixin {
         BatchingRenderCommandQueue self = (BatchingRenderCommandQueue) (Object) this;
         int[] color = ZeegRenderHooks.GLINT_COLOR.get();
         if (color == null) {
-            color = new int[]{GlintConfig.getRed(), GlintConfig.getGreen(), GlintConfig.getBlue()};
+            color = new int[]{GlintConfig.getRed(), GlintConfig.getGreen(), GlintConfig.getBlue(), GlintConfig.getStrength()};
         }
         List<int[]> colors = ZeegRenderHooks.getCommandColors(self);
         if (colors == null) {

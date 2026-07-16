@@ -7,6 +7,7 @@ import net.minecraft.client.gui.Click;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.ButtonWidget;
+import net.minecraft.client.gui.widget.SliderWidget;
 import net.minecraft.client.gui.widget.TextFieldWidget;
 import net.minecraft.item.ItemStack;
 import net.minecraft.text.Text;
@@ -29,6 +30,7 @@ public class GlintConfigScreen extends Screen {
     private TextFieldWidget greenField;
     private TextFieldWidget blueField;
     private TextFieldWidget hexField;
+    private StrengthSlider strengthSlider;
 
     // Item Tab Widgets
     private TextFieldWidget itemField;
@@ -43,6 +45,7 @@ public class GlintConfigScreen extends Screen {
     private int red = GlintConfig.getFileRed();
     private int green = GlintConfig.getFileGreen();
     private int blue = GlintConfig.getFileBlue();
+    private int strength = GlintConfig.getFileStrength();
 
     // Popup Color Picker State & Widgets
     private boolean showPopup = false;
@@ -53,10 +56,12 @@ public class GlintConfigScreen extends Screen {
     private int popupRed = 255;
     private int popupGreen = 255;
     private int popupBlue = 255;
+    private int popupStrength = 255;
     private TextFieldWidget popupRedField;
     private TextFieldWidget popupGreenField;
     private TextFieldWidget popupBlueField;
     private TextFieldWidget popupHexField;
+    private StrengthSlider popupStrSlider;
 
     public GlintConfigScreen(Screen parent) {
         super(TITLE);
@@ -90,6 +95,9 @@ public class GlintConfigScreen extends Screen {
             popupHexField.setChangedListener(s -> updatePopupFromHexField());
             addDrawableChild(popupHexField);
 
+            popupStrSlider = new StrengthSlider(cx - 110, cy + 35, 60, 20, popupStrength, () -> popupStrength = popupStrSlider.getIntValue());
+            addDrawableChild(popupStrSlider);
+
             // Popup Preset Buttons
             int py = cy - 65;
             addDrawableChild(ButtonWidget.builder(Text.literal("Cyan"), btn -> setPopupColor(0, 255, 255))
@@ -109,9 +117,9 @@ public class GlintConfigScreen extends Screen {
 
             // OK / Cancel Buttons
             addDrawableChild(ButtonWidget.builder(Text.literal("OK"), btn -> confirmPopup())
-                .dimensions(cx - 90, cy + 55, 80, 20).build());
+                .dimensions(cx - 90, cy + 65, 80, 20).build());
             addDrawableChild(ButtonWidget.builder(Text.literal("Cancel"), btn -> cancelPopup())
-                .dimensions(cx + 10, cy + 55, 80, 20).build());
+                .dimensions(cx + 10, cy + 65, 80, 20).build());
 
         } else {
             // Tab Selection Header
@@ -155,6 +163,9 @@ public class GlintConfigScreen extends Screen {
                 hexField.setText(toHex(red, green, blue));
                 hexField.setChangedListener(s -> updateFromHexField());
                 addDrawableChild(hexField);
+
+                strengthSlider = new StrengthSlider(cx - 130, 170, 80, 20, strength, () -> strength = strengthSlider.getIntValue());
+                addDrawableChild(strengthSlider);
 
                 // Main Presets
                 int py = 70;
@@ -354,6 +365,7 @@ public class GlintConfigScreen extends Screen {
         popupRed = red;
         popupGreen = green;
         popupBlue = blue;
+        popupStrength = strength;
         showPopup = true;
         nameField.setText("");
         rebuild();
@@ -373,6 +385,7 @@ public class GlintConfigScreen extends Screen {
         popupRed = red;
         popupGreen = green;
         popupBlue = blue;
+        popupStrength = strength;
         showPopup = true;
         itemField.setText("");
         tempSearchQuery = "";
@@ -433,6 +446,7 @@ public class GlintConfigScreen extends Screen {
                         popupRed = ic.getRed();
                         popupGreen = ic.getGreen();
                         popupBlue = ic.getBlue();
+                        popupStrength = ic.getStrength();
                         showPopup = true;
                         rebuild();
                         return true;
@@ -453,6 +467,7 @@ public class GlintConfigScreen extends Screen {
                         popupRed = nc.getRed();
                         popupGreen = nc.getGreen();
                         popupBlue = nc.getBlue();
+                        popupStrength = nc.getStrength();
                         showPopup = true;
                         rebuild();
                         return true;
@@ -470,17 +485,19 @@ public class GlintConfigScreen extends Screen {
                 ic.setRed(popupRed);
                 ic.setGreen(popupGreen);
                 ic.setBlue(popupBlue);
+                ic.setStrength(popupStrength);
             } else {
                 GlintConfig.NamedColor nc = GlintConfig.getNamedColors().get(popupEditIndex);
                 nc.setRed(popupRed);
                 nc.setGreen(popupGreen);
                 nc.setBlue(popupBlue);
+                nc.setStrength(popupStrength);
             }
         } else {
             if (popupIsItem) {
-                GlintConfig.getItemColors().add(new GlintConfig.ItemColor(popupName, popupRed, popupGreen, popupBlue));
+                GlintConfig.getItemColors().add(new GlintConfig.ItemColor(popupName, popupRed, popupGreen, popupBlue, popupStrength));
             } else {
-                GlintConfig.getNamedColors().add(new GlintConfig.NamedColor(popupName, popupRed, popupGreen, popupBlue));
+                GlintConfig.getNamedColors().add(new GlintConfig.NamedColor(popupName, popupRed, popupGreen, popupBlue, popupStrength));
             }
         }
         showPopup = false;
@@ -592,6 +609,7 @@ public class GlintConfigScreen extends Screen {
         GlintConfig.setRed(red);
         GlintConfig.setGreen(green);
         GlintConfig.setBlue(blue);
+        GlintConfig.setStrength(strength);
         GlintConfig.save();
         MinecraftClient.getInstance().reloadResources();
         close();
@@ -602,6 +620,7 @@ public class GlintConfigScreen extends Screen {
         GlintConfig.setRed(red);
         GlintConfig.setGreen(green);
         GlintConfig.setBlue(blue);
+        GlintConfig.setStrength(strength);
         GlintConfig.save();
         client.setScreen(parent);
     }
@@ -617,8 +636,8 @@ public class GlintConfigScreen extends Screen {
             ctx.fill(0, 0, width, height, 0x55000000);
 
             // Popup container
-            ctx.fill(cx - 150, cy - 95, cx + 150, cy + 95, 0xFF181818);
-            ctx.drawStrokedRectangle(cx - 150, cy - 95, 300, 190, 0xFF666666);
+            ctx.fill(cx - 150, cy - 95, cx + 150, cy + 110, 0xFF181818);
+            ctx.drawStrokedRectangle(cx - 150, cy - 95, 300, 205, 0xFF666666);
 
             // Popup Title
             String nameText = popupIsItem && popupName.contains(":") ? popupName.substring(popupName.indexOf(":") + 1) : popupName;
@@ -630,11 +649,12 @@ public class GlintConfigScreen extends Screen {
             ctx.drawTextWithShadow(textRenderer, Text.literal("G:"), cx - 130, cy - 36, 0xFF55FF55);
             ctx.drawTextWithShadow(textRenderer, Text.literal("B:"), cx - 130, cy - 11, 0xFF5555FF);
             ctx.drawTextWithShadow(textRenderer, Text.literal("Hex:"), cx - 137, cy + 14, 0xFFFFFFFF);
+            ctx.drawTextWithShadow(textRenderer, Text.literal("Str:"), cx - 137, cy + 39, 0xFFFFFFFF);
 
             // Color Preview Box
             int previewColor = 0xFF000000 | (clamp(popupRed) << 16) | (clamp(popupGreen) << 8) | clamp(popupBlue);
-            ctx.fill(cx - 40, cy - 65, cx + 20, cy + 30, previewColor);
-            ctx.drawStrokedRectangle(cx - 40, cy - 65, 60, 95, 0xFF888888);
+            ctx.fill(cx - 40, cy - 65, cx + 20, cy + 55, previewColor);
+            ctx.drawStrokedRectangle(cx - 40, cy - 65, 60, 120, 0xFF888888);
 
         } else {
             // General Title
@@ -642,17 +662,18 @@ public class GlintConfigScreen extends Screen {
 
             if (activeTab == 0) {
                 // Tab 0: General Color Panel
-                ctx.fill(cx - 180, 60, cx + 180, 195, 0x55000000);
-                ctx.drawStrokedRectangle(cx - 180, 60, 360, 135, 0xFF555555);
+                ctx.fill(cx - 180, 60, cx + 180, 220, 0x55000000);
+                ctx.drawStrokedRectangle(cx - 180, 60, 360, 160, 0xFF555555);
 
                 ctx.drawTextWithShadow(textRenderer, Text.literal("R:"), cx - 170, 74, 0xFFFF5555);
                 ctx.drawTextWithShadow(textRenderer, Text.literal("G:"), cx - 170, 99, 0xFF55FF55);
                 ctx.drawTextWithShadow(textRenderer, Text.literal("B:"), cx - 170, 124, 0xFF5555FF);
                 ctx.drawTextWithShadow(textRenderer, Text.literal("Hex:"), cx - 175, 149, 0xFFFFFFFF);
+                ctx.drawTextWithShadow(textRenderer, Text.literal("Str:"), cx - 172, 174, 0xFFFFFFFF);
 
                 int previewColor = 0xFF000000 | (clamp(red) << 16) | (clamp(green) << 8) | clamp(blue);
-                ctx.fill(cx - 40, 70, cx + 30, 165, previewColor);
-                ctx.drawStrokedRectangle(cx - 40, 70, 70, 95, 0xFF555555);
+                ctx.fill(cx - 40, 70, cx + 30, 190, previewColor);
+                ctx.drawStrokedRectangle(cx - 40, 70, 70, 120, 0xFF555555);
 
             } else if (activeTab == 1) {
                 // Tab 1: Item-Specific Glints Panel
@@ -755,4 +776,38 @@ public class GlintConfigScreen extends Screen {
     }
 
     private static int clamp(int v) { return Math.max(0, Math.min(255, v)); }
+
+    private class StrengthSlider extends SliderWidget {
+        private final Runnable onApply;
+
+        StrengthSlider(int x, int y, int w, int h, int value, Runnable onApply) {
+            super(x, y, w, h, Text.literal("Str: " + value), value / 255.0);
+            this.onApply = onApply;
+        }
+
+        @Override
+        public void applyValue() {
+            onApply.run();
+            updateMessage();
+        }
+
+        @Override
+        public void updateMessage() {
+            setMessage(getMessage());
+        }
+
+        @Override
+        public Text getMessage() {
+            return Text.literal("Str: " + getIntValue());
+        }
+
+        int getIntValue() {
+            return (int) Math.round(value * 255);
+        }
+
+        void setIntValue(int v) {
+            value = clamp(v) / 255.0;
+            updateMessage();
+        }
+    }
 }

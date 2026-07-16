@@ -20,6 +20,6 @@ public class RenderLayerMixin {
         if (((RenderLayer) (Object) this).getRenderPipeline() != RenderPipelines.GLINT) return original;
         int[] color = ZeegRenderHooks.GLINT_COLOR.get();
         if (color == null) return original;
-        return new Vector4f(color[0] / 255.0f, color[1] / 255.0f, color[2] / 255.0f, 1.0f);
+        return new Vector4f(color[0] / 255.0f, color[1] / 255.0f, color[2] / 255.0f, color.length > 3 ? color[3] / 255.0f : 1.0f);
     }
 }
