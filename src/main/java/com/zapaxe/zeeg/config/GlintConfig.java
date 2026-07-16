@@ -17,6 +17,7 @@ public class GlintConfig {
     private static int green = 75;
     private static int blue = 200;
     private static final List<NamedColor> namedColors = new ArrayList<>();
+    private static final List<ItemColor> itemColors = new ArrayList<>();
 
     public static int getRed() { return red; }
     public static int getGreen() { return green; }
@@ -27,6 +28,7 @@ public class GlintConfig {
     public static void setBlue(int b) { blue = clamp(b); }
 
     public static List<NamedColor> getNamedColors() { return namedColors; }
+    public static List<ItemColor> getItemColors() { return itemColors; }
 
     private static int clamp(int v) { return Math.max(0, Math.min(255, v)); }
 
@@ -45,6 +47,14 @@ public class GlintConfig {
         return null;
     }
 
+    public static ItemColor matchItem(String itemId) {
+        if (itemId == null || itemId.isEmpty()) return null;
+        for (ItemColor ic : itemColors) {
+            if (ic.itemId.equals(itemId)) return ic;
+        }
+        return null;
+    }
+
     public static void load() {
         try {
             if (Files.exists(PATH)) {
@@ -58,6 +68,10 @@ public class GlintConfig {
                         if (data.namedColors != null) {
                             namedColors.addAll(data.namedColors);
                         }
+                        itemColors.clear();
+                        if (data.itemColors != null) {
+                            itemColors.addAll(data.itemColors);
+                        }
                     }
                 }
             }
@@ -70,7 +84,7 @@ public class GlintConfig {
         try {
             Files.createDirectories(PATH.getParent());
             try (java.io.Writer writer = Files.newBufferedWriter(PATH)) {
-                GSON.toJson(new Data(red, green, blue, namedColors), writer);
+                GSON.toJson(new Data(red, green, blue, namedColors, itemColors), writer);
             }
         } catch (IOException e) {
             ZEEG.LOGGER.error("Failed to save config", e);
@@ -94,12 +108,30 @@ public class GlintConfig {
         public void setBlue(int b) { blue = clamp(b); }
     }
 
+    public static class ItemColor {
+        String itemId;
+        int red, green, blue;
+        ItemColor() {}
+        public ItemColor(String itemId, int r, int g, int b) {
+            this.itemId = itemId; red = r; green = g; blue = b;
+        }
+        public String getItemId() { return itemId; }
+        public void setItemId(String id) { itemId = id; }
+        public int getRed() { return red; }
+        public int getGreen() { return green; }
+        public int getBlue() { return blue; }
+        public void setRed(int r) { red = clamp(r); }
+        public void setGreen(int g) { green = clamp(g); }
+        public void setBlue(int b) { blue = clamp(b); }
+    }
+
     private static class Data {
         int red, green, blue;
         List<NamedColor> namedColors;
+        List<ItemColor> itemColors;
         Data() {}
-        Data(int r, int g, int b, List<NamedColor> nc) {
-            red = r; green = g; blue = b; namedColors = nc;
+        Data(int r, int g, int b, List<NamedColor> nc, List<ItemColor> ic) {
+            red = r; green = g; blue = b; namedColors = nc; itemColors = ic;
         }
     }
 }

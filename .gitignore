@@ -13,3 +13,5 @@ build/
 *.swo
 *~
 .DS_Store
+run/
+run
