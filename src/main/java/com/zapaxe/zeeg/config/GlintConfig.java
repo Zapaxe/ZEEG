@@ -20,6 +20,7 @@ public class GlintConfig {
     private static int blue = 200;
     private static int strength = 255;
     private static boolean rainbow = false;
+    private static int rainbowSpeed = 25;
     private static final List<NamedColor> namedColors = new ArrayList<>();
     private static final List<ItemColor> itemColors = new ArrayList<>();
 
@@ -65,17 +66,27 @@ public class GlintConfig {
         return rainbow;
     }
 
+    public static int getRainbowSpeed() {
+        for (int i = packsData.size() - 1; i >= 0; i--) {
+            if (packOverridesEnabled && enabledPackIds.contains(packsData.get(i).packId))
+                return packsData.get(i).rainbowSpeed;
+        }
+        return rainbowSpeed;
+    }
+
     public static int getFileRed() { return red; }
     public static int getFileGreen() { return green; }
     public static int getFileBlue() { return blue; }
     public static int getFileStrength() { return strength; }
     public static boolean getFileRainbow() { return rainbow; }
+    public static int getFileRainbowSpeed() { return rainbowSpeed; }
 
     public static void setRed(int r) { red = clamp(r); }
     public static void setGreen(int g) { green = clamp(g); }
     public static void setBlue(int b) { blue = clamp(b); }
     public static void setStrength(int s) { strength = clamp(s); }
     public static void setRainbow(boolean r) { rainbow = r; }
+    public static void setRainbowSpeed(int s) { rainbowSpeed = clampSpeed(s); }
 
     public static List<NamedColor> getNamedColors() {
         return namedColors;
@@ -119,6 +130,7 @@ public class GlintConfig {
             pd.blue = clamp(data.blue);
             pd.strength = clamp(data.strength);
             pd.rainbow = data.rainbow;
+            pd.rainbowSpeed = clampSpeed(data.rainbowSpeed);
             if (data.namedColors != null) pd.namedColors.addAll(data.namedColors);
             if (data.itemColors != null) pd.itemColors.addAll(data.itemColors);
         }
@@ -129,6 +141,7 @@ public class GlintConfig {
         String packId;
         int red = 150, green = 75, blue = 200, strength = 255;
         boolean rainbow = false;
+        int rainbowSpeed = 25;
         final List<NamedColor> namedColors = new ArrayList<>();
         final List<ItemColor> itemColors = new ArrayList<>();
         PackData() {}
@@ -138,11 +151,13 @@ public class GlintConfig {
         public int getBlue() { return blue; }
         public int getStrength() { return strength; }
         public boolean isRainbow() { return rainbow; }
+        public int getRainbowSpeed() { return rainbowSpeed; }
         public List<NamedColor> getNamedColors() { return namedColors; }
         public List<ItemColor> getItemColors() { return itemColors; }
     }
 
     private static int clamp(int v) { return Math.max(0, Math.min(255, v)); }
+    private static int clampSpeed(int v) { return Math.max(1, Math.min(100, v)); }
 
     public static String getShaderVec4() {
         float r = getRed() / 255.0f;
@@ -210,6 +225,7 @@ public class GlintConfig {
                         blue = clamp(data.blue);
                         strength = clamp(data.strength);
                         rainbow = data.rainbow;
+                        rainbowSpeed = clampSpeed(data.rainbowSpeed);
                         namedColors.clear();
                         if (data.namedColors != null) namedColors.addAll(data.namedColors);
                         itemColors.clear();
@@ -226,7 +242,7 @@ public class GlintConfig {
         try {
             Files.createDirectories(PATH.getParent());
             try (java.io.Writer writer = Files.newBufferedWriter(PATH)) {
-                GSON.toJson(new Data(red, green, blue, strength, rainbow, packOverridesEnabled, new ArrayList<>(enabledPackIds), namedColors, itemColors), writer);
+                GSON.toJson(new Data(red, green, blue, strength, rainbow, rainbowSpeed, packOverridesEnabled, new ArrayList<>(enabledPackIds), namedColors, itemColors), writer);
             }
         } catch (IOException e) {
             ZEEG.LOGGER.error("Failed to save config", e);
@@ -238,6 +254,7 @@ public class GlintConfig {
         int red, green, blue;
         int strength = 255;
         boolean rainbow = false;
+        int rainbowSpeed = 25;
         NamedColor() {}
         public NamedColor(String name, int r, int g, int b) {
             this.name = name; red = r; green = g; blue = b;
@@ -248,6 +265,9 @@ public class GlintConfig {
         public NamedColor(String name, int r, int g, int b, int s, boolean rainbow) {
             this.name = name; red = r; green = g; blue = b; strength = clamp(s); this.rainbow = rainbow;
         }
+        public NamedColor(String name, int r, int g, int b, int s, boolean rainbow, int speed) {
+            this.name = name; red = r; green = g; blue = b; strength = clamp(s); this.rainbow = rainbow; this.rainbowSpeed = clampSpeed(speed);
+        }
         public String getName() { return name; }
         public void setName(String n) { name = n; }
         public int getRed() { return red; }
@@ -255,11 +275,13 @@ public class GlintConfig {
         public int getBlue() { return blue; }
         public int getStrength() { return strength; }
         public boolean isRainbow() { return rainbow; }
+        public int getRainbowSpeed() { return rainbowSpeed; }
         public void setRed(int r) { red = clamp(r); }
         public void setGreen(int g) { green = clamp(g); }
         public void setBlue(int b) { blue = clamp(b); }
         public void setStrength(int s) { strength = clamp(s); }
         public void setRainbow(boolean r) { rainbow = r; }
+        public void setRainbowSpeed(int s) { rainbowSpeed = clampSpeed(s); }
     }
 
     public static class ItemColor {
@@ -267,6 +289,7 @@ public class GlintConfig {
         int red, green, blue;
         int strength = 255;
         boolean rainbow = false;
+        int rainbowSpeed = 25;
         ItemColor() {}
         public ItemColor(String itemId, int r, int g, int b) {
             this.itemId = itemId; red = r; green = g; blue = b;
@@ -277,6 +300,9 @@ public class GlintConfig {
         public ItemColor(String itemId, int r, int g, int b, int s, boolean rainbow) {
             this.itemId = itemId; red = r; green = g; blue = b; strength = clamp(s); this.rainbow = rainbow;
         }
+        public ItemColor(String itemId, int r, int g, int b, int s, boolean rainbow, int speed) {
+            this.itemId = itemId; red = r; green = g; blue = b; strength = clamp(s); this.rainbow = rainbow; this.rainbowSpeed = clampSpeed(speed);
+        }
         public String getItemId() { return itemId; }
         public void setItemId(String id) { itemId = id; }
         public int getRed() { return red; }
@@ -284,24 +310,27 @@ public class GlintConfig {
         public int getBlue() { return blue; }
         public int getStrength() { return strength; }
         public boolean isRainbow() { return rainbow; }
+        public int getRainbowSpeed() { return rainbowSpeed; }
         public void setRed(int r) { red = clamp(r); }
         public void setGreen(int g) { green = clamp(g); }
         public void setBlue(int b) { blue = clamp(b); }
         public void setStrength(int s) { strength = clamp(s); }
         public void setRainbow(boolean r) { rainbow = r; }
+        public void setRainbowSpeed(int s) { rainbowSpeed = clampSpeed(s); }
     }
 
     private static class Data {
         int red, green, blue;
         int strength = 255;
         boolean rainbow = false;
+        int rainbowSpeed = 25;
         boolean packOverridesEnabled;
         List<String> enabledPacks;
         List<NamedColor> namedColors;
         List<ItemColor> itemColors;
         Data() {}
-        Data(int r, int g, int b, int s, boolean rainbow, boolean poe, List<String> ep, List<NamedColor> nc, List<ItemColor> ic) {
-            red = r; green = g; blue = b; strength = s; this.rainbow = rainbow; packOverridesEnabled = poe;
+        Data(int r, int g, int b, int s, boolean rainbow, int rainbowSpeed, boolean poe, List<String> ep, List<NamedColor> nc, List<ItemColor> ic) {
+            red = r; green = g; blue = b; strength = s; this.rainbow = rainbow; this.rainbowSpeed = rainbowSpeed; packOverridesEnabled = poe;
             enabledPacks = ep; namedColors = nc; itemColors = ic;
         }
     }

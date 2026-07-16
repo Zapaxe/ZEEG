@@ -42,7 +42,9 @@ public class RenderLayerMixin {
         int[] color = ZeegRenderHooks.GLINT_COLOR.get();
         if (color == null) return original;
         if (color.length > 4 && color[4] == 1) {
-            float hue = (System.currentTimeMillis() % 4000L) / 4000.0f;
+            int speed = color.length > 5 ? color[5] : 25;
+            long time = System.currentTimeMillis();
+            float hue = (float) (((time * speed) % 100000L) / 100000.0);
             float[] rgb = zeeg$hsvToRgb(hue, 1.0f, 1.0f);
             return new Vector4f(rgb[0], rgb[1], rgb[2], color.length > 3 ? color[3] / 255.0f : 1.0f);
         }

@@ -19,7 +19,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public class ItemModelManagerMixin {
     @Inject(method = "clearAndUpdate", at = @At("RETURN"))
     private void zeeg$captureNamedColor(ItemRenderState state, ItemStack stack, ItemDisplayContext displayContext, World world, HeldItemContext heldItemContext, int seed, CallbackInfo ci) {
-        int r = -1, g = -1, b = -1, s = 255;
+        int r = -1, g = -1, b = -1, s = 255, spd = 25;
         boolean rainbow = false;
         if (!stack.isEmpty()) {
             Text customName = stack.get(DataComponentTypes.CUSTOM_NAME);
@@ -27,18 +27,18 @@ public class ItemModelManagerMixin {
                 String name = customName.getString();
                 GlintConfig.NamedColor match = GlintConfig.matchName(name);
                 if (match != null) {
-                    r = match.getRed(); g = match.getGreen(); b = match.getBlue(); s = match.getStrength(); rainbow = match.isRainbow();
+                    r = match.getRed(); g = match.getGreen(); b = match.getBlue(); s = match.getStrength(); rainbow = match.isRainbow(); spd = match.getRainbowSpeed();
                 }
             }
             if (r == -1) {
                 String itemId = net.minecraft.registry.Registries.ITEM.getId(stack.getItem()).toString();
                 GlintConfig.ItemColor itemMatch = GlintConfig.matchItem(itemId);
                 if (itemMatch != null) {
-                    r = itemMatch.getRed(); g = itemMatch.getGreen(); b = itemMatch.getBlue(); s = itemMatch.getStrength(); rainbow = itemMatch.isRainbow();
+                    r = itemMatch.getRed(); g = itemMatch.getGreen(); b = itemMatch.getBlue(); s = itemMatch.getStrength(); rainbow = itemMatch.isRainbow(); spd = itemMatch.getRainbowSpeed();
                 }
             }
         }
-        ((NamedColorAccess) state).zeeg$setNamedColor(r, g, b, s, rainbow);
+        ((NamedColorAccess) state).zeeg$setNamedColor(r, g, b, s, rainbow, spd);
         if (r != -1) {
             state.addModelKey(java.util.List.of(r, g, b));
         }
