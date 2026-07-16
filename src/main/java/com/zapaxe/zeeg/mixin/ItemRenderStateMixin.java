@@ -18,11 +18,11 @@ public abstract class ItemRenderStateMixin implements NamedColorAccess {
     private int[] zeeg$namedColor;
 
     @Override
-    public void zeeg$setNamedColor(int r, int g, int b, int strength) {
+    public void zeeg$setNamedColor(int r, int g, int b, int strength, boolean rainbow) {
         if (r == -1) {
             this.zeeg$namedColor = null;
         } else {
-            this.zeeg$namedColor = new int[]{r, g, b, strength};
+            this.zeeg$namedColor = new int[]{r, g, b, strength, rainbow ? 1 : 0};
         }
     }
 
@@ -35,7 +35,7 @@ public abstract class ItemRenderStateMixin implements NamedColorAccess {
     private void zeeg$setGlintColorOnRender(MatrixStack matrices, OrderedRenderCommandQueue renderCommands, int light, int overlay, int seed, CallbackInfo ci) {
         int[] color = this.zeeg$namedColor;
         if (color == null) {
-            color = new int[]{GlintConfig.getRed(), GlintConfig.getGreen(), GlintConfig.getBlue(), GlintConfig.getStrength()};
+            color = new int[]{GlintConfig.getRed(), GlintConfig.getGreen(), GlintConfig.getBlue(), GlintConfig.getStrength(), GlintConfig.getRainbow() ? 1 : 0};
         }
         ZeegRenderHooks.GLINT_COLOR.set(color);
     }
