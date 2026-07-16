@@ -6,8 +6,8 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin(targets = "net.minecraft.client.renderer.feature.ItemFeatureRenderer$Submit")
-public class ItemSubmitMixin {
+@Mixin(targets = "net.minecraft.client.renderer.feature.ModelFeatureRenderer$Submit")
+public class ModelSubmitMixin {
     @Inject(method = "<init>", at = @At("RETURN"))
     private void zeeg$captureColor(CallbackInfo ci) {
         int[] color = ZeegRenderHooks.GLINT_COLOR.get();

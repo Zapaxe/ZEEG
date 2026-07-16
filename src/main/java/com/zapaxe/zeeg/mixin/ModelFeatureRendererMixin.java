@@ -1,21 +1,20 @@
 package com.zapaxe.zeeg.mixin;
 
 import com.zapaxe.zeeg.ZeegRenderHooks;
-import net.minecraft.client.renderer.feature.ItemFeatureRenderer;
+import net.minecraft.client.renderer.feature.ModelFeatureRenderer;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin(ItemFeatureRenderer.class)
-public class ItemFeatureRendererMixin {
+@Mixin(ModelFeatureRenderer.class)
+public class ModelFeatureRendererMixin {
     @Inject(
-        method = "prepareSubmit",
+        method = "prepareModel",
         at = @At("HEAD")
     )
     private void zeeg$setGlintColorOnRender(
-        ItemFeatureRenderer.Submit submit,
-        boolean outline,
+        ModelFeatureRenderer.Submit submit,
         CallbackInfo ci
     ) {
         int[] color = ZeegRenderHooks.ITEM_SUBMIT_COLORS.get(submit);
@@ -27,12 +26,11 @@ public class ItemFeatureRendererMixin {
     }
 
     @Inject(
-        method = "prepareSubmit",
+        method = "prepareModel",
         at = @At("RETURN")
     )
     private void zeeg$clearGlintColorOnRender(
-        ItemFeatureRenderer.Submit submit,
-        boolean outline,
+        ModelFeatureRenderer.Submit submit,
         CallbackInfo ci
     ) {
         ZeegRenderHooks.GLINT_COLOR.remove();

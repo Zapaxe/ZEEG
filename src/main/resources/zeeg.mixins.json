@@ -10,7 +10,9 @@
         "ItemRenderStateMixin",
         "ItemStackMixin",
         "RenderLayerMixin",
-        "ShaderLoaderMixin"
+        "ShaderLoaderMixin",
+        "ModelSubmitMixin",
+        "ModelFeatureRendererMixin"
     ],
     "injectors": {
         "defaultRequire": 1

@@ -782,7 +782,7 @@ public class GlintConfigScreen extends Screen {
         GlintConfig.setGreen2(green2);
         GlintConfig.setBlue2(blue2);
         GlintConfig.save();
-        minecraft.setScreen(parent);
+        minecraft.setScreenAndShow(parent);
     }
 
     private int getCycleColor(int mode, int r1, int g1, int b1, int r2, int g2, int b2, int speed) {
