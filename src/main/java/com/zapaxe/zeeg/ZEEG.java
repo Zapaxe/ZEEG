@@ -14,6 +14,7 @@ public class ZEEG implements ModInitializer {
 
     @Override
     public void onInitialize() {
+        GlintComponent.register();
         GlintConfig.load();
         ResourceManagerHelper.get(ResourceType.CLIENT_RESOURCES)
             .registerReloadListener(new ResourcePackConfigLoader());

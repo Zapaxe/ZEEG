@@ -1,6 +1,7 @@
 package com.zapaxe.zeeg.mixin;
 
 import com.zapaxe.zeeg.NamedColorAccess;
+import com.zapaxe.zeeg.GlintComponent;
 import com.zapaxe.zeeg.config.GlintConfig;
 import net.minecraft.client.item.ItemModelManager;
 import net.minecraft.client.render.item.ItemRenderState;
@@ -22,6 +23,13 @@ public class ItemModelManagerMixin {
         int r = -1, g = -1, b = -1, s = 255, spd = 25, mode = 0, r2 = 255, g2 = 255, b2 = 255;
         boolean rainbow = false;
         if (!stack.isEmpty()) {
+            GlintComponent comp = stack.get(GlintComponent.TYPE);
+            if (comp != null) {
+                r = comp.r(); g = comp.g(); b = comp.b(); s = comp.strength();
+                mode = comp.cycleMode(); spd = comp.speed();
+                r2 = comp.r2(); g2 = comp.g2(); b2 = comp.b2();
+                rainbow = (mode == 1);
+            }
             Text customName = stack.get(DataComponentTypes.CUSTOM_NAME);
             if (customName != null) {
                 String name = customName.getString();
