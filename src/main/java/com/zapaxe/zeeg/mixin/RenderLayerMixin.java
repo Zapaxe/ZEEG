@@ -1,8 +1,8 @@
 package com.zapaxe.zeeg.mixin;
 
 import com.zapaxe.zeeg.ZeegRenderHooks;
-import net.minecraft.client.gl.RenderPipelines;
-import net.minecraft.client.render.RenderLayer;
+import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.client.renderer.rendertype.RenderType;
 import org.joml.Vector4f;
 import org.joml.Vector4fc;
 import org.spongepowered.asm.mixin.Mixin;
@@ -11,7 +11,7 @@ import org.spongepowered.asm.mixin.injection.ModifyArg;
 
 import org.spongepowered.asm.mixin.Unique;
 
-@Mixin(RenderLayer.class)
+@Mixin(RenderType.class)
 public class RenderLayerMixin {
     @Unique
     private static float[] zeeg$hsvToRgb(float hue, float saturation, float value) {
@@ -34,11 +34,11 @@ public class RenderLayerMixin {
 
     @ModifyArg(
         method = "draw",
-        at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gl/DynamicUniforms;write(Lorg/joml/Matrix4fc;Lorg/joml/Vector4fc;Lorg/joml/Vector3fc;Lorg/joml/Matrix4fc;)Lcom/mojang/blaze3d/buffers/GpuBufferSlice;"),
+        at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/DynamicUniforms;writeTransform(Lorg/joml/Matrix4fc;Lorg/joml/Vector4fc;Lorg/joml/Vector3fc;Lorg/joml/Matrix4fc;)Lcom/mojang/blaze3d/buffers/GpuBufferSlice;"),
         index = 1
     )
     private Vector4fc zeeg$modifyColorModulator(Vector4fc original) {
-        if (((RenderLayer) (Object) this).getRenderPipeline() != RenderPipelines.GLINT) return original;
+        if (((RenderType) (Object) this).pipeline() != RenderPipelines.GLINT) return original;
         int[] color = ZeegRenderHooks.GLINT_COLOR.get();
         if (color == null) return original;
         int mode = color.length > 6 ? color[6] : (color.length > 4 && color[4] == 1 ? 1 : 0);

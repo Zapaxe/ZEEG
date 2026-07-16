@@ -2,21 +2,20 @@ package com.zapaxe.zeeg.config;
 
 import java.util.ArrayList;
 import java.util.List;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.Click;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.widget.ButtonWidget;
-import net.minecraft.client.gui.widget.SliderWidget;
-import net.minecraft.client.gui.widget.TextFieldWidget;
-import net.minecraft.item.ItemStack;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
-import net.minecraft.util.Identifier;
-import net.minecraft.registry.Registries;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.AbstractSliderButton;
+import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.network.chat.Component;
+import net.minecraft.ChatFormatting;
+import net.minecraft.resources.Identifier;
+import net.minecraft.core.registries.BuiltInRegistries;
 
 public class GlintConfigScreen extends Screen {
-    private static final Text TITLE = Text.literal("Glint Color Config");
+    private static final Component TITLE = Component.literal("Glint Color Config");
     private final Screen parent;
     
     // Tab State
@@ -26,19 +25,19 @@ public class GlintConfigScreen extends Screen {
     private int packPage = 0;
 
     // Main Tab Widgets
-    private TextFieldWidget redField;
-    private TextFieldWidget greenField;
-    private TextFieldWidget blueField;
-    private TextFieldWidget hexField;
+    private EditBox redField;
+    private EditBox greenField;
+    private EditBox blueField;
+    private EditBox hexField;
     private StrengthSlider strengthSlider;
 
     // Item Tab Widgets
-    private TextFieldWidget itemField;
+    private EditBox itemField;
     private String tempSearchQuery = "";
-    private final List<net.minecraft.item.Item> searchMatches = new ArrayList<>();
+    private final List<net.minecraft.world.item.Item> searchMatches = new ArrayList<>();
 
     // Named Tab Widgets
-    private TextFieldWidget nameField;
+    private EditBox nameField;
     
     // Config State
     private boolean updating = false;
@@ -72,10 +71,10 @@ public class GlintConfigScreen extends Screen {
     private int popupGreen2 = 255;
     private int popupBlue2 = 255;
     private int popupEditingColorIndex = 0; // 0 for A (primary), 1 for B (secondary)
-    private TextFieldWidget popupRedField;
-    private TextFieldWidget popupGreenField;
-    private TextFieldWidget popupBlueField;
-    private TextFieldWidget popupHexField;
+    private EditBox popupRedField;
+    private EditBox popupGreenField;
+    private EditBox popupBlueField;
+    private EditBox popupHexField;
     private StrengthSlider popupStrSlider;
     private SpeedSlider popupSpeedSlider;
 
@@ -94,197 +93,197 @@ public class GlintConfigScreen extends Screen {
             if (popupCycleMode == 1) modeName = "Rainbow";
             else if (popupCycleMode == 2) modeName = "Duo-Tone";
 
-            ButtonWidget popupModeBtn = ButtonWidget.builder(Text.literal(modeName), btn -> {
+            Button popupModeBtn = Button.builder(Component.literal(modeName), btn -> {
                 popupCycleMode = (popupCycleMode + 1) % 3;
                 popupRainbow = (popupCycleMode == 1);
                 popupEditingColorIndex = 0;
                 rebuild();
-            }).dimensions(cx - 110, cy + 60, 60, 20).build();
-            addDrawableChild(popupModeBtn);
+            }).bounds(cx - 110, cy + 60, 60, 20).build();
+            addRenderableWidget(popupModeBtn);
 
             if (popupCycleMode == 1) {
                 popupSpeedSlider = new SpeedSlider(cx - 110, cy - 15, 60, 20, popupRainbowSpeed, () -> popupRainbowSpeed = popupSpeedSlider.getIntValue());
-                addDrawableChild(popupSpeedSlider);
+                addRenderableWidget(popupSpeedSlider);
             } else {
                 int rVal = (popupEditingColorIndex == 0) ? popupRed : popupRed2;
                 int gVal = (popupEditingColorIndex == 0) ? popupGreen : popupGreen2;
                 int bVal = (popupEditingColorIndex == 0) ? popupBlue : popupBlue2;
 
-                popupRedField = new TextFieldWidget(textRenderer, cx - 110, cy - 65, 60, 20, Text.literal("Red"));
-                popupRedField.setText(String.valueOf(rVal));
-                popupRedField.setChangedListener(s -> updatePopupFromRgbFields());
-                addDrawableChild(popupRedField);
+                popupRedField = new EditBox(font, cx - 110, cy - 65, 60, 20, Component.literal("Red"));
+                popupRedField.setValue(String.valueOf(rVal));
+                popupRedField.setResponder(s -> updatePopupFromRgbFields());
+                addRenderableWidget(popupRedField);
 
-                popupGreenField = new TextFieldWidget(textRenderer, cx - 110, cy - 40, 60, 20, Text.literal("Green"));
-                popupGreenField.setText(String.valueOf(gVal));
-                popupGreenField.setChangedListener(s -> updatePopupFromRgbFields());
-                addDrawableChild(popupGreenField);
+                popupGreenField = new EditBox(font, cx - 110, cy - 40, 60, 20, Component.literal("Green"));
+                popupGreenField.setValue(String.valueOf(gVal));
+                popupGreenField.setResponder(s -> updatePopupFromRgbFields());
+                addRenderableWidget(popupGreenField);
 
-                popupBlueField = new TextFieldWidget(textRenderer, cx - 110, cy - 15, 60, 20, Text.literal("Blue"));
-                popupBlueField.setText(String.valueOf(bVal));
-                popupBlueField.setChangedListener(s -> updatePopupFromRgbFields());
-                addDrawableChild(popupBlueField);
+                popupBlueField = new EditBox(font, cx - 110, cy - 15, 60, 20, Component.literal("Blue"));
+                popupBlueField.setValue(String.valueOf(bVal));
+                popupBlueField.setResponder(s -> updatePopupFromRgbFields());
+                addRenderableWidget(popupBlueField);
 
-                popupHexField = new TextFieldWidget(textRenderer, cx - 110, cy + 10, 60, 20, Text.literal("Hex"));
-                popupHexField.setText(toHex(rVal, gVal, bVal));
-                popupHexField.setChangedListener(s -> updatePopupFromHexField());
-                addDrawableChild(popupHexField);
+                popupHexField = new EditBox(font, cx - 110, cy + 10, 60, 20, Component.literal("Hex"));
+                popupHexField.setValue(toHex(rVal, gVal, bVal));
+                popupHexField.setResponder(s -> updatePopupFromHexField());
+                addRenderableWidget(popupHexField);
 
                 if (popupCycleMode == 2) {
-                    ButtonWidget colorToggleBtn = ButtonWidget.builder(
-                        Text.literal(popupEditingColorIndex == 0 ? "Color: Primary" : "Color: Secondary"),
+                    Button colorToggleBtn = Button.builder(
+                        Component.literal(popupEditingColorIndex == 0 ? "Color: Primary" : "Color: Secondary"),
                         btn -> {
                             popupEditingColorIndex = 1 - popupEditingColorIndex;
                             rebuild();
                         }
-                    ).dimensions(cx + 30, cy + 10, 115, 20).build();
-                    addDrawableChild(colorToggleBtn);
+                    ).bounds(cx + 30, cy + 10, 115, 20).build();
+                    addRenderableWidget(colorToggleBtn);
 
                     popupSpeedSlider = new SpeedSlider(cx + 30, cy + 35, 115, 20, popupRainbowSpeed, () -> popupRainbowSpeed = popupSpeedSlider.getIntValue());
-                    addDrawableChild(popupSpeedSlider);
+                    addRenderableWidget(popupSpeedSlider);
                 }
             }
 
             popupStrSlider = new StrengthSlider(cx - 110, cy + 35, 60, 20, popupStrength, () -> popupStrength = popupStrSlider.getIntValue());
-            addDrawableChild(popupStrSlider);
+            addRenderableWidget(popupStrSlider);
 
             // Popup Preset Buttons
             int py = cy - 65;
-            addDrawableChild(ButtonWidget.builder(Text.literal("Cyan"), btn -> setPopupColor(0, 255, 255))
-                .dimensions(cx + 30, py, 55, 20).build());
-            addDrawableChild(ButtonWidget.builder(Text.literal("Red"), btn -> setPopupColor(255, 0, 0))
-                .dimensions(cx + 90, py, 55, 20).build());
+            addRenderableWidget(Button.builder(Component.literal("Cyan"), btn -> setPopupColor(0, 255, 255))
+                .bounds(cx + 30, py, 55, 20).build());
+            addRenderableWidget(Button.builder(Component.literal("Red"), btn -> setPopupColor(255, 0, 0))
+                .bounds(cx + 90, py, 55, 20).build());
 
-            addDrawableChild(ButtonWidget.builder(Text.literal("Green"), btn -> setPopupColor(0, 255, 0))
-                .dimensions(cx + 30, py + 25, 55, 20).build());
-            addDrawableChild(ButtonWidget.builder(Text.literal("Blue"), btn -> setPopupColor(0, 0, 255))
-                .dimensions(cx + 90, py + 25, 55, 20).build());
+            addRenderableWidget(Button.builder(Component.literal("Green"), btn -> setPopupColor(0, 255, 0))
+                .bounds(cx + 30, py + 25, 55, 20).build());
+            addRenderableWidget(Button.builder(Component.literal("Blue"), btn -> setPopupColor(0, 0, 255))
+                .bounds(cx + 90, py + 25, 55, 20).build());
 
-            addDrawableChild(ButtonWidget.builder(Text.literal("White"), btn -> setPopupColor(255, 255, 255))
-                .dimensions(cx + 30, py + 50, 55, 20).build());
-            addDrawableChild(ButtonWidget.builder(Text.literal("OG"), btn -> setPopupColor(150, 75, 200))
-                .dimensions(cx + 90, py + 50, 55, 20).build());
+            addRenderableWidget(Button.builder(Component.literal("White"), btn -> setPopupColor(255, 255, 255))
+                .bounds(cx + 30, py + 50, 55, 20).build());
+            addRenderableWidget(Button.builder(Component.literal("OG"), btn -> setPopupColor(150, 75, 200))
+                .bounds(cx + 90, py + 50, 55, 20).build());
 
             // OK / Cancel Buttons
-            addDrawableChild(ButtonWidget.builder(Text.literal("OK"), btn -> confirmPopup())
-                .dimensions(cx - 90, cy + 90, 80, 20).build());
-            addDrawableChild(ButtonWidget.builder(Text.literal("Cancel"), btn -> cancelPopup())
-                .dimensions(cx + 10, cy + 90, 80, 20).build());
+            addRenderableWidget(Button.builder(Component.literal("OK"), btn -> confirmPopup())
+                .bounds(cx - 90, cy + 90, 80, 20).build());
+            addRenderableWidget(Button.builder(Component.literal("Cancel"), btn -> cancelPopup())
+                .bounds(cx + 10, cy + 90, 80, 20).build());
 
         } else {
             // Tab Selection Header
-            ButtonWidget tab0 = ButtonWidget.builder(Text.literal("General"), btn -> { activeTab = 0; tempSearchQuery = ""; searchMatches.clear(); rebuild(); })
-                .dimensions(cx - 155, 22, 100, 20).build();
-            ButtonWidget tab1 = ButtonWidget.builder(Text.literal("Item Colors"), btn -> { activeTab = 1; tempSearchQuery = ""; searchMatches.clear(); rebuild(); })
-                .dimensions(cx - 50, 22, 100, 20).build();
-            ButtonWidget tab2 = ButtonWidget.builder(Text.literal("Named Colors"), btn -> { activeTab = 2; tempSearchQuery = ""; searchMatches.clear(); rebuild(); })
-                .dimensions(cx + 55, 22, 100, 20).build();
+            Button tab0 = Button.builder(Component.literal("General"), btn -> { activeTab = 0; tempSearchQuery = ""; searchMatches.clear(); rebuild(); })
+                .bounds(cx - 155, 22, 100, 20).build();
+            Button tab1 = Button.builder(Component.literal("Item Colors"), btn -> { activeTab = 1; tempSearchQuery = ""; searchMatches.clear(); rebuild(); })
+                .bounds(cx - 50, 22, 100, 20).build();
+            Button tab2 = Button.builder(Component.literal("Named Colors"), btn -> { activeTab = 2; tempSearchQuery = ""; searchMatches.clear(); rebuild(); })
+                .bounds(cx + 55, 22, 100, 20).build();
 
             tab0.active = (activeTab != 0);
             tab1.active = (activeTab != 1);
             tab2.active = (activeTab != 2);
-            ButtonWidget tab3 = ButtonWidget.builder(Text.literal("Pack Configs"), btn -> { activeTab = 3; rebuild(); })
-                .dimensions(cx + 160, 22, 100, 20).build();
+            Button tab3 = Button.builder(Component.literal("Pack Configs"), btn -> { activeTab = 3; rebuild(); })
+                .bounds(cx + 160, 22, 100, 20).build();
             tab3.active = (activeTab != 3);
 
-            addDrawableChild(tab0);
-            addDrawableChild(tab1);
-            addDrawableChild(tab2);
-            addDrawableChild(tab3);
+            addRenderableWidget(tab0);
+            addRenderableWidget(tab1);
+            addRenderableWidget(tab2);
+            addRenderableWidget(tab3);
 
             if (activeTab == 0) {
                 String modeName = "Static";
                 if (cycleMode == 1) modeName = "Rainbow";
                 else if (cycleMode == 2) modeName = "Duo-Tone";
 
-                ButtonWidget modeBtn = ButtonWidget.builder(Text.literal(modeName), btn -> {
+                Button modeBtn = Button.builder(Component.literal(modeName), btn -> {
                     cycleMode = (cycleMode + 1) % 3;
                     rainbow = (cycleMode == 1);
                     editingColorIndex = 0;
                     rebuild();
-                }).dimensions(cx - 130, 195, 80, 20).build();
-                addDrawableChild(modeBtn);
+                }).bounds(cx - 130, 195, 80, 20).build();
+                addRenderableWidget(modeBtn);
 
                 if (cycleMode == 1) {
                     speedSlider = new SpeedSlider(cx - 130, 95, 80, 20, rainbowSpeed, () -> rainbowSpeed = speedSlider.getIntValue());
-                    addDrawableChild(speedSlider);
+                    addRenderableWidget(speedSlider);
                 } else {
                     // General Settings Layout
                     int rVal = (editingColorIndex == 0) ? red : red2;
                     int gVal = (editingColorIndex == 0) ? green : green2;
                     int bVal = (editingColorIndex == 0) ? blue : blue2;
 
-                    redField = new TextFieldWidget(textRenderer, cx - 130, 70, 80, 20, Text.literal("Red"));
-                    redField.setText(String.valueOf(rVal));
-                    redField.setChangedListener(s -> updateFromRgbFields());
-                    addDrawableChild(redField);
+                    redField = new EditBox(font, cx - 130, 70, 80, 20, Component.literal("Red"));
+                    redField.setValue(String.valueOf(rVal));
+                    redField.setResponder(s -> updateFromRgbFields());
+                    addRenderableWidget(redField);
 
-                    greenField = new TextFieldWidget(textRenderer, cx - 130, 95, 80, 20, Text.literal("Green"));
-                    greenField.setText(String.valueOf(gVal));
-                    greenField.setChangedListener(s -> updateFromRgbFields());
-                    addDrawableChild(greenField);
+                    greenField = new EditBox(font, cx - 130, 95, 80, 20, Component.literal("Green"));
+                    greenField.setValue(String.valueOf(gVal));
+                    greenField.setResponder(s -> updateFromRgbFields());
+                    addRenderableWidget(greenField);
 
-                    blueField = new TextFieldWidget(textRenderer, cx - 130, 120, 80, 20, Text.literal("Blue"));
-                    blueField.setText(String.valueOf(bVal));
-                    blueField.setChangedListener(s -> updateFromRgbFields());
-                    addDrawableChild(blueField);
+                    blueField = new EditBox(font, cx - 130, 120, 80, 20, Component.literal("Blue"));
+                    blueField.setValue(String.valueOf(bVal));
+                    blueField.setResponder(s -> updateFromRgbFields());
+                    addRenderableWidget(blueField);
 
-                    hexField = new TextFieldWidget(textRenderer, cx - 130, 145, 80, 20, Text.literal("Hex"));
-                    hexField.setText(toHex(rVal, gVal, bVal));
-                    hexField.setChangedListener(s -> updateFromHexField());
-                    addDrawableChild(hexField);
+                    hexField = new EditBox(font, cx - 130, 145, 80, 20, Component.literal("Hex"));
+                    hexField.setValue(toHex(rVal, gVal, bVal));
+                    hexField.setResponder(s -> updateFromHexField());
+                    addRenderableWidget(hexField);
 
                     if (cycleMode == 2) {
-                        ButtonWidget colorToggleBtn = ButtonWidget.builder(
-                            Text.literal(editingColorIndex == 0 ? "Color: Primary" : "Color: Secondary"),
+                        Button colorToggleBtn = Button.builder(
+                            Component.literal(editingColorIndex == 0 ? "Color: Primary" : "Color: Secondary"),
                             btn -> {
                                 editingColorIndex = 1 - editingColorIndex;
                                 rebuild();
                             }
-                        ).dimensions(cx + 45, 145, 120, 20).build();
-                        addDrawableChild(colorToggleBtn);
+                        ).bounds(cx + 45, 145, 120, 20).build();
+                        addRenderableWidget(colorToggleBtn);
 
                         speedSlider = new SpeedSlider(cx + 45, 170, 120, 20, rainbowSpeed, () -> rainbowSpeed = speedSlider.getIntValue());
-                        addDrawableChild(speedSlider);
+                        addRenderableWidget(speedSlider);
                     }
                 }
 
                 strengthSlider = new StrengthSlider(cx - 130, 170, 80, 20, strength, () -> strength = strengthSlider.getIntValue());
-                addDrawableChild(strengthSlider);
+                addRenderableWidget(strengthSlider);
 
                 // Main Presets
                 int py = 70;
-                addDrawableChild(ButtonWidget.builder(Text.literal("Cyan"), btn -> setColor(0, 255, 255))
-                    .dimensions(cx + 45, py, 55, 20).build());
-                addDrawableChild(ButtonWidget.builder(Text.literal("Red"), btn -> setColor(255, 0, 0))
-                    .dimensions(cx + 110, py, 55, 20).build());
+                addRenderableWidget(Button.builder(Component.literal("Cyan"), btn -> setColor(0, 255, 255))
+                    .bounds(cx + 45, py, 55, 20).build());
+                addRenderableWidget(Button.builder(Component.literal("Red"), btn -> setColor(255, 0, 0))
+                    .bounds(cx + 110, py, 55, 20).build());
 
-                addDrawableChild(ButtonWidget.builder(Text.literal("Green"), btn -> setColor(0, 255, 0))
-                    .dimensions(cx + 45, py + 25, 55, 20).build());
-                addDrawableChild(ButtonWidget.builder(Text.literal("Blue"), btn -> setColor(0, 0, 255))
-                    .dimensions(cx + 110, py + 25, 55, 20).build());
+                addRenderableWidget(Button.builder(Component.literal("Green"), btn -> setColor(0, 255, 0))
+                    .bounds(cx + 45, py + 25, 55, 20).build());
+                addRenderableWidget(Button.builder(Component.literal("Blue"), btn -> setColor(0, 0, 255))
+                    .bounds(cx + 110, py + 25, 55, 20).build());
 
-                addDrawableChild(ButtonWidget.builder(Text.literal("White"), btn -> setColor(255, 255, 255))
-                    .dimensions(cx + 45, py + 50, 55, 20).build());
-                addDrawableChild(ButtonWidget.builder(Text.literal("OG"), btn -> setColor(150, 75, 200))
-                    .dimensions(cx + 110, py + 50, 55, 20).build());
+                addRenderableWidget(Button.builder(Component.literal("White"), btn -> setColor(255, 255, 255))
+                    .bounds(cx + 45, py + 50, 55, 20).build());
+                addRenderableWidget(Button.builder(Component.literal("OG"), btn -> setColor(150, 75, 200))
+                    .bounds(cx + 110, py + 50, 55, 20).build());
 
             } else if (activeTab == 1) {
                 // Item Specific Override Tab
-                itemField = new TextFieldWidget(textRenderer, cx - 100, 65, 145, 20, Text.literal("Item ID"));
+                itemField = new EditBox(font, cx - 100, 65, 145, 20, Component.literal("Item ID"));
                 itemField.setMaxLength(256);
-                itemField.setPlaceholder(Text.literal("e.g. netherite_helmet"));
+                itemField.setHint(Component.literal("e.g. netherite_helmet"));
                 if (tempSearchQuery != null && !tempSearchQuery.isEmpty()) {
-                    itemField.setText(tempSearchQuery);
+                    itemField.setValue(tempSearchQuery);
                 }
-                itemField.setChangedListener(s -> {
+                itemField.setResponder(s -> {
                     tempSearchQuery = s;
                     updateSearchMatches(s);
                 });
-                addDrawableChild(itemField);
+                addRenderableWidget(itemField);
 
-                addDrawableChild(ButtonWidget.builder(Text.literal("Add"), btn -> addItemColor())
-                    .dimensions(cx + 50, 65, 50, 20).build());
+                addRenderableWidget(Button.builder(Component.literal("Add"), btn -> addItemColor())
+                    .bounds(cx + 50, 65, 50, 20).build());
 
                 List<GlintConfig.ItemColor> items = GlintConfig.getItemColors();
                 int maxPages = (items.size() - 1) / 5;
@@ -306,37 +305,37 @@ public class GlintConfigScreen extends Screen {
                         dispName = dispName.substring(0, 14) + "..";
                     }
 
-                    addDrawableChild(ButtonWidget.builder(
-                        Text.literal(dispName),
+                    addRenderableWidget(Button.builder(
+                        Component.literal(dispName),
                         btn -> {
                             setColor(ic.getRed(), ic.getGreen(), ic.getBlue());
-                            itemField.setText(ic.getItemId());
+                            itemField.setValue(ic.getItemId());
                         }
-                    ).dimensions(cx - 80, ey, 125, 20).build());
+                    ).bounds(cx - 80, ey, 125, 20).build());
 
-                    addDrawableChild(ButtonWidget.builder(
-                        Text.literal("X"), btn -> {
+                    addRenderableWidget(Button.builder(
+                        Component.literal("X"), btn -> {
                             GlintConfig.getItemColors().remove(idx);
                             rebuild();
                         }
-                    ).dimensions(cx + 50, ey, 50, 20).build());
+                    ).bounds(cx + 50, ey, 50, 20).build());
                 }
 
                 if (items.size() > 5) {
-                    addDrawableChild(ButtonWidget.builder(Text.literal("<"), btn -> { if (itemPage > 0) { itemPage--; rebuild(); } })
-                        .dimensions(cx - 50, 210, 20, 20).build());
-                    addDrawableChild(ButtonWidget.builder(Text.literal(">"), btn -> { if ((itemPage + 1) * 5 < items.size()) { itemPage++; rebuild(); } })
-                        .dimensions(cx + 30, 210, 20, 20).build());
+                    addRenderableWidget(Button.builder(Component.literal("<"), btn -> { if (itemPage > 0) { itemPage--; rebuild(); } })
+                        .bounds(cx - 50, 210, 20, 20).build());
+                    addRenderableWidget(Button.builder(Component.literal(">"), btn -> { if ((itemPage + 1) * 5 < items.size()) { itemPage++; rebuild(); } })
+                        .bounds(cx + 30, 210, 20, 20).build());
                 }
 
             } else if (activeTab == 2) {
                 // Named Colors Tab
-                nameField = new TextFieldWidget(textRenderer, cx - 100, 65, 145, 20, Text.literal("Name"));
-                nameField.setPlaceholder(Text.literal("e.g. Goated Sword"));
-                addDrawableChild(nameField);
+                nameField = new EditBox(font, cx - 100, 65, 145, 20, Component.literal("Name"));
+                nameField.setHint(Component.literal("e.g. Goated Sword"));
+                addRenderableWidget(nameField);
 
-                addDrawableChild(ButtonWidget.builder(Text.literal("Add"), btn -> addNamed())
-                    .dimensions(cx + 50, 65, 50, 20).build());
+                addRenderableWidget(Button.builder(Component.literal("Add"), btn -> addNamed())
+                    .bounds(cx + 50, 65, 50, 20).build());
 
                 List<GlintConfig.NamedColor> named = GlintConfig.getNamedColors();
                 int maxPages = (named.size() - 1) / 5;
@@ -355,38 +354,38 @@ public class GlintConfigScreen extends Screen {
                         dispName = dispName.substring(0, 14) + "..";
                     }
 
-                    addDrawableChild(ButtonWidget.builder(
-                        Text.literal(dispName),
+                    addRenderableWidget(Button.builder(
+                        Component.literal(dispName),
                         btn -> {
                             setColor(nc.getRed(), nc.getGreen(), nc.getBlue());
-                            nameField.setText(nc.getName());
+                            nameField.setValue(nc.getName());
                         }
-                    ).dimensions(cx - 80, ey, 125, 20).build());
+                    ).bounds(cx - 80, ey, 125, 20).build());
 
-                    addDrawableChild(ButtonWidget.builder(
-                        Text.literal("X"), btn -> {
+                    addRenderableWidget(Button.builder(
+                        Component.literal("X"), btn -> {
                             GlintConfig.getNamedColors().remove(idx);
                             rebuild();
                         }
-                    ).dimensions(cx + 50, ey, 50, 20).build());
+                    ).bounds(cx + 50, ey, 50, 20).build());
                 }
 
                 if (named.size() > 5) {
-                    addDrawableChild(ButtonWidget.builder(Text.literal("<"), btn -> { if (namedPage > 0) { namedPage--; rebuild(); } })
-                        .dimensions(cx - 50, 210, 20, 20).build());
-                    addDrawableChild(ButtonWidget.builder(Text.literal(">"), btn -> { if ((namedPage + 1) * 5 < named.size()) { namedPage++; rebuild(); } })
-                        .dimensions(cx + 30, 210, 20, 20).build());
+                    addRenderableWidget(Button.builder(Component.literal("<"), btn -> { if (namedPage > 0) { namedPage--; rebuild(); } })
+                        .bounds(cx - 50, 210, 20, 20).build());
+                    addRenderableWidget(Button.builder(Component.literal(">"), btn -> { if ((namedPage + 1) * 5 < named.size()) { namedPage++; rebuild(); } })
+                        .bounds(cx + 30, 210, 20, 20).build());
                 }
 
             } else if (activeTab == 3) {
                 // Pack Configs Tab
-                addDrawableChild(ButtonWidget.builder(
-                    Text.literal("Master: " + (GlintConfig.isPackOverridesEnabled() ? "ON" : "OFF")),
+                addRenderableWidget(Button.builder(
+                    Component.literal("Master: " + (GlintConfig.isPackOverridesEnabled() ? "ON" : "OFF")),
                     btn -> {
                         GlintConfig.setPackOverridesEnabled(!GlintConfig.isPackOverridesEnabled());
                         rebuild();
                     }
-                ).dimensions(cx - 100, 65, 155, 20).build());
+                ).bounds(cx - 100, 65, 155, 20).build());
 
                 List<GlintConfig.PackData> packs = GlintConfig.getPacksData();
                 int maxPages = (packs.size() - 1) / 5;
@@ -406,43 +405,43 @@ public class GlintConfigScreen extends Screen {
                     }
 
                     boolean enabled = GlintConfig.isPackEnabled(pd.getPackId());
-                    addDrawableChild(ButtonWidget.builder(
-                        Text.literal(dispName),
+                    addRenderableWidget(Button.builder(
+                        Component.literal(dispName),
                         btn -> {}
-                    ).dimensions(cx - 80, ey, 125, 20).build());
+                    ).bounds(cx - 80, ey, 125, 20).build());
 
-                    addDrawableChild(ButtonWidget.builder(
-                        Text.literal(enabled ? "ON" : "OFF"),
+                    addRenderableWidget(Button.builder(
+                        Component.literal(enabled ? "ON" : "OFF"),
                         btn -> {
                             GlintConfig.setPackEnabled(pd.getPackId(), !GlintConfig.isPackEnabled(pd.getPackId()));
                             rebuild();
                         }
-                    ).dimensions(cx + 50, ey, 50, 20).build());
+                    ).bounds(cx + 50, ey, 50, 20).build());
                 }
 
                 if (packs.size() > 5) {
-                    addDrawableChild(ButtonWidget.builder(Text.literal("<"), btn -> { if (packPage > 0) { packPage--; rebuild(); } })
-                        .dimensions(cx - 50, 210, 20, 20).build());
-                    addDrawableChild(ButtonWidget.builder(Text.literal(">"), btn -> { if ((packPage + 1) * 5 < packs.size()) { packPage++; rebuild(); } })
-                        .dimensions(cx + 30, 210, 20, 20).build());
+                    addRenderableWidget(Button.builder(Component.literal("<"), btn -> { if (packPage > 0) { packPage--; rebuild(); } })
+                        .bounds(cx - 50, 210, 20, 20).build());
+                    addRenderableWidget(Button.builder(Component.literal(">"), btn -> { if ((packPage + 1) * 5 < packs.size()) { packPage++; rebuild(); } })
+                        .bounds(cx + 30, 210, 20, 20).build());
                 }
             }
 
             // Bottom controls
-            addDrawableChild(ButtonWidget.builder(Text.literal("Save & Reload"), btn -> saveAndReload())
-                .dimensions(cx - 100, height - 55, 200, 20).build());
-            addDrawableChild(ButtonWidget.builder(Text.literal("Back"), btn -> close())
-                .dimensions(cx - 100, height - 30, 200, 20).build());
+            addRenderableWidget(Button.builder(Component.literal("Save & Reload"), btn -> saveAndReload())
+                .bounds(cx - 100, height - 55, 200, 20).build());
+            addRenderableWidget(Button.builder(Component.literal("Back"), btn -> onClose())
+                .bounds(cx - 100, height - 30, 200, 20).build());
         }
     }
 
     private void rebuild() {
-        clearChildren();
+        clearWidgets();
         init();
     }
 
     private void addNamed() {
-        String name = nameField.getText().trim();
+        String name = nameField.getValue().trim();
         if (name.isEmpty()) return;
         popupName = name;
         popupIsItem = false;
@@ -459,12 +458,12 @@ public class GlintConfigScreen extends Screen {
         popupBlue2 = blue2;
         popupEditingColorIndex = 0;
         showPopup = true;
-        nameField.setText("");
+        nameField.setValue("");
         rebuild();
     }
 
     private void addItemColor() {
-        String itemId = itemField.getText().trim().toLowerCase().replace(" ", "_");
+        String itemId = itemField.getValue().trim().toLowerCase().replace(" ", "_");
         if (itemId.isEmpty()) return;
         if (!itemId.contains(":")) {
             itemId = "minecraft:" + itemId;
@@ -486,7 +485,7 @@ public class GlintConfigScreen extends Screen {
         popupBlue2 = blue2;
         popupEditingColorIndex = 0;
         showPopup = true;
-        itemField.setText("");
+        itemField.setValue("");
         tempSearchQuery = "";
         searchMatches.clear();
         rebuild();
@@ -496,8 +495,8 @@ public class GlintConfigScreen extends Screen {
         searchMatches.clear();
         String query = s.trim().toLowerCase().replace(" ", "_");
         if (!query.isEmpty()) {
-            for (net.minecraft.item.Item item : Registries.ITEM) {
-                String idStr = Registries.ITEM.getId(item).toString();
+            for (net.minecraft.world.item.Item item : BuiltInRegistries.ITEM) {
+                String idStr = BuiltInRegistries.ITEM.getKey(item).toString();
                 if (idStr.contains(query)) {
                     searchMatches.add(item);
                     if (searchMatches.size() >= 5) break;
@@ -507,7 +506,7 @@ public class GlintConfigScreen extends Screen {
     }
 
     @Override
-    public boolean mouseClicked(Click click, boolean primary) {
+    public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent click, boolean primary) {
         double mx = click.x();
         double my = click.y();
         if (!showPopup && activeTab == 1 && !searchMatches.isEmpty()) {
@@ -517,9 +516,9 @@ public class GlintConfigScreen extends Screen {
                 if (my >= startY && my < startY + searchMatches.size() * 20) {
                     int idx = ((int)my - startY) / 20;
                     if (idx >= 0 && idx < searchMatches.size()) {
-                        net.minecraft.item.Item clickedItem = searchMatches.get(idx);
-                        itemField.setText(Registries.ITEM.getId(clickedItem).toString());
-                        tempSearchQuery = itemField.getText();
+                        net.minecraft.world.item.Item clickedItem = searchMatches.get(idx);
+                        itemField.setValue(BuiltInRegistries.ITEM.getKey(clickedItem).toString());
+                        tempSearchQuery = itemField.getValue();
                         searchMatches.clear();
                         rebuild();
                         return true;
@@ -642,10 +641,10 @@ public class GlintConfigScreen extends Screen {
         } else {
             red2 = r; green2 = g; blue2 = b;
         }
-        if (redField != null) redField.setText(String.valueOf(r));
-        if (greenField != null) greenField.setText(String.valueOf(g));
-        if (blueField != null) blueField.setText(String.valueOf(b));
-        if (hexField != null) hexField.setText(toHex(r, g, b));
+        if (redField != null) redField.setValue(String.valueOf(r));
+        if (greenField != null) greenField.setValue(String.valueOf(g));
+        if (blueField != null) blueField.setValue(String.valueOf(b));
+        if (hexField != null) hexField.setValue(toHex(r, g, b));
         updating = false;
     }
 
@@ -657,10 +656,10 @@ public class GlintConfigScreen extends Screen {
         } else {
             popupRed2 = r; popupGreen2 = g; popupBlue2 = b;
         }
-        if (popupRedField != null) popupRedField.setText(String.valueOf(r));
-        if (popupGreenField != null) popupGreenField.setText(String.valueOf(g));
-        if (popupBlueField != null) popupBlueField.setText(String.valueOf(b));
-        if (popupHexField != null) popupHexField.setText(toHex(r, g, b));
+        if (popupRedField != null) popupRedField.setValue(String.valueOf(r));
+        if (popupGreenField != null) popupGreenField.setValue(String.valueOf(g));
+        if (popupBlueField != null) popupBlueField.setValue(String.valueOf(b));
+        if (popupHexField != null) popupHexField.setValue(toHex(r, g, b));
         updating = false;
     }
 
@@ -672,15 +671,15 @@ public class GlintConfigScreen extends Screen {
         if (updating) return;
         updating = true;
         try {
-            int r = clamp(Integer.parseInt(redField.getText()));
-            int g = clamp(Integer.parseInt(greenField.getText()));
-            int b = clamp(Integer.parseInt(blueField.getText()));
+            int r = clamp(Integer.parseInt(redField.getValue()));
+            int g = clamp(Integer.parseInt(greenField.getValue()));
+            int b = clamp(Integer.parseInt(blueField.getValue()));
             if (editingColorIndex == 0) {
                 red = r; green = g; blue = b;
             } else {
                 red2 = r; green2 = g; blue2 = b;
             }
-            hexField.setText(toHex(r, g, b));
+            hexField.setValue(toHex(r, g, b));
         } catch (NumberFormatException ignored) {}
         updating = false;
     }
@@ -688,7 +687,7 @@ public class GlintConfigScreen extends Screen {
     private void updateFromHexField() {
         if (updating) return;
         updating = true;
-        String t = hexField.getText().trim();
+        String t = hexField.getValue().trim();
         if (t.startsWith("#") || t.startsWith("0x")) {
             t = t.replaceFirst("^[#0][xX]?", "");
         }
@@ -703,9 +702,9 @@ public class GlintConfigScreen extends Screen {
                 } else {
                     red2 = r; green2 = g; blue2 = b;
                 }
-                redField.setText(String.valueOf(r));
-                greenField.setText(String.valueOf(g));
-                blueField.setText(String.valueOf(b));
+                redField.setValue(String.valueOf(r));
+                greenField.setValue(String.valueOf(g));
+                blueField.setValue(String.valueOf(b));
             } catch (NumberFormatException ignored) {}
         }
         updating = false;
@@ -715,15 +714,15 @@ public class GlintConfigScreen extends Screen {
         if (updating) return;
         updating = true;
         try {
-            int r = clamp(Integer.parseInt(popupRedField.getText()));
-            int g = clamp(Integer.parseInt(popupGreenField.getText()));
-            int b = clamp(Integer.parseInt(popupBlueField.getText()));
+            int r = clamp(Integer.parseInt(popupRedField.getValue()));
+            int g = clamp(Integer.parseInt(popupGreenField.getValue()));
+            int b = clamp(Integer.parseInt(popupBlueField.getValue()));
             if (popupEditingColorIndex == 0) {
                 popupRed = r; popupGreen = g; popupBlue = b;
             } else {
                 popupRed2 = r; popupGreen2 = g; popupBlue2 = b;
             }
-            popupHexField.setText(toHex(r, g, b));
+            popupHexField.setValue(toHex(r, g, b));
         } catch (NumberFormatException ignored) {}
         updating = false;
     }
@@ -731,7 +730,7 @@ public class GlintConfigScreen extends Screen {
     private void updatePopupFromHexField() {
         if (updating) return;
         updating = true;
-        String t = popupHexField.getText().trim();
+        String t = popupHexField.getValue().trim();
         if (t.startsWith("#") || t.startsWith("0x")) {
             t = t.replaceFirst("^[#0][xX]?", "");
         }
@@ -746,9 +745,9 @@ public class GlintConfigScreen extends Screen {
                 } else {
                     popupRed2 = r; popupGreen2 = g; popupBlue2 = b;
                 }
-                popupRedField.setText(String.valueOf(r));
-                popupGreenField.setText(String.valueOf(g));
-                popupBlueField.setText(String.valueOf(b));
+                popupRedField.setValue(String.valueOf(r));
+                popupGreenField.setValue(String.valueOf(g));
+                popupBlueField.setValue(String.valueOf(b));
             } catch (NumberFormatException ignored) {}
         }
         updating = false;
@@ -766,12 +765,12 @@ public class GlintConfigScreen extends Screen {
         GlintConfig.setGreen2(green2);
         GlintConfig.setBlue2(blue2);
         GlintConfig.save();
-        MinecraftClient.getInstance().reloadResources();
-        close();
+        Minecraft.getInstance().reloadResourcePacks();
+        onClose();
     }
 
     @Override
-    public void close() {
+    public void onClose() {
         GlintConfig.setRed(red);
         GlintConfig.setGreen(green);
         GlintConfig.setBlue(blue);
@@ -783,7 +782,7 @@ public class GlintConfigScreen extends Screen {
         GlintConfig.setGreen2(green2);
         GlintConfig.setBlue2(blue2);
         GlintConfig.save();
-        client.setScreen(parent);
+        minecraft.setScreen(parent);
     }
 
     private int getCycleColor(int mode, int r1, int g1, int b1, int r2, int g2, int b2, int speed) {
@@ -803,8 +802,8 @@ public class GlintConfigScreen extends Screen {
     }
 
     @Override
-    public void renderBackground(DrawContext ctx, int mx, int my, float delta) {
-        super.renderBackground(ctx, mx, my, delta);
+    public void extractBackground(GuiGraphicsExtractor ctx, int mx, int my, float delta) {
+        super.extractBackground(ctx, mx, my, delta);
         int cx = width / 2;
         int cy = height / 2;
 
@@ -814,61 +813,59 @@ public class GlintConfigScreen extends Screen {
 
             // Popup container
             ctx.fill(cx - 150, cy - 95, cx + 150, cy + 135, 0xFF181818);
-            ctx.drawStrokedRectangle(cx - 150, cy - 95, 300, 230, 0xFF666666);
+            ctx.outline(cx - 150, cy - 95, 300, 230, 0xFF666666);
 
             // Popup Title
             String nameText = popupIsItem && popupName.contains(":") ? popupName.substring(popupName.indexOf(":") + 1) : popupName;
-            ctx.drawCenteredTextWithShadow(textRenderer,
-                Text.literal("Pick Color for: " + nameText).formatted(Formatting.YELLOW), cx, cy - 85, 0xFFFFFFFF);
+            ctx.centeredText(font, Component.literal("Pick Color for: " + nameText).withStyle(ChatFormatting.YELLOW), cx, cy - 85, 0xFFFFFFFF);
 
             // Labels for fields
             if (popupCycleMode == 1) {
-                ctx.drawTextWithShadow(textRenderer, Text.literal("Spd:"), cx - 137, cy - 11, 0xFFFFFFFF);
+                ctx.text(font, Component.literal("Spd:"), cx - 137, cy - 11, 0xFFFFFFFF, true);
             } else {
-                ctx.drawTextWithShadow(textRenderer, Text.literal("R:"), cx - 130, cy - 61, 0xFFFF5555);
-                ctx.drawTextWithShadow(textRenderer, Text.literal("G:"), cx - 130, cy - 36, 0xFF55FF55);
-                ctx.drawTextWithShadow(textRenderer, Text.literal("B:"), cx - 130, cy - 11, 0xFF5555FF);
-                ctx.drawTextWithShadow(textRenderer, Text.literal("Hex:"), cx - 137, cy + 14, 0xFFFFFFFF);
+                ctx.text(font, Component.literal("R:"), cx - 130, cy - 61, 0xFFFF5555, true);
+                ctx.text(font, Component.literal("G:"), cx - 130, cy - 36, 0xFF55FF55, true);
+                ctx.text(font, Component.literal("B:"), cx - 130, cy - 11, 0xFF5555FF, true);
+                ctx.text(font, Component.literal("Hex:"), cx - 137, cy + 14, 0xFFFFFFFF, true);
             }
-            ctx.drawTextWithShadow(textRenderer, Text.literal("Str:"), cx - 137, cy + 39, 0xFFFFFFFF);
-            ctx.drawTextWithShadow(textRenderer, Text.literal("Mode:"), cx - 142, cy + 64, 0xFFFFFFFF);
+            ctx.text(font, Component.literal("Str:"), cx - 137, cy + 39, 0xFFFFFFFF, true);
+            ctx.text(font, Component.literal("Mode:"), cx - 142, cy + 64, 0xFFFFFFFF, true);
 
             // Color Preview Box
             int previewColor = 0xFF000000 | getCycleColor(popupCycleMode, popupRed, popupGreen, popupBlue, popupRed2, popupGreen2, popupBlue2, popupRainbowSpeed);
             ctx.fill(cx - 40, cy - 65, cx + 20, cy + 55, previewColor);
-            ctx.drawStrokedRectangle(cx - 40, cy - 65, 60, 120, 0xFF888888);
+            ctx.outline(cx - 40, cy - 65, 60, 120, 0xFF888888);
 
         } else {
             // General Title
-            ctx.drawCenteredTextWithShadow(textRenderer, TITLE, cx, 8, 0xFFFFFFFF);
+            ctx.centeredText(font, TITLE, cx, 8, 0xFFFFFFFF);
 
             if (activeTab == 0) {
                 // Tab 0: General Color Panel
                 ctx.fill(cx - 180, 60, cx + 180, 220, 0x55000000);
-                ctx.drawStrokedRectangle(cx - 180, 60, 360, 160, 0xFF555555);
+                ctx.outline(cx - 180, 60, 360, 160, 0xFF555555);
 
                 if (cycleMode == 1) {
-                    ctx.drawTextWithShadow(textRenderer, Text.literal("Spd:"), cx - 172, 99, 0xFFFFFFFF);
+                    ctx.text(font, Component.literal("Spd:"), cx - 172, 99, 0xFFFFFFFF, true);
                 } else {
-                    ctx.drawTextWithShadow(textRenderer, Text.literal("R:"), cx - 170, 74, 0xFFFF5555);
-                    ctx.drawTextWithShadow(textRenderer, Text.literal("G:"), cx - 170, 99, 0xFF55FF55);
-                    ctx.drawTextWithShadow(textRenderer, Text.literal("B:"), cx - 170, 124, 0xFF5555FF);
-                    ctx.drawTextWithShadow(textRenderer, Text.literal("Hex:"), cx - 175, 149, 0xFFFFFFFF);
+                    ctx.text(font, Component.literal("R:"), cx - 170, 74, 0xFFFF5555, true);
+                    ctx.text(font, Component.literal("G:"), cx - 170, 99, 0xFF55FF55, true);
+                    ctx.text(font, Component.literal("B:"), cx - 170, 124, 0xFF5555FF, true);
+                    ctx.text(font, Component.literal("Hex:"), cx - 175, 149, 0xFFFFFFFF, true);
                 }
-                ctx.drawTextWithShadow(textRenderer, Text.literal("Str:"), cx - 172, 174, 0xFFFFFFFF);
-                ctx.drawTextWithShadow(textRenderer, Text.literal("Mode:"), cx - 172, 199, 0xFFFFFFFF);
+                ctx.text(font, Component.literal("Str:"), cx - 172, 174, 0xFFFFFFFF, true);
+                ctx.text(font, Component.literal("Mode:"), cx - 172, 199, 0xFFFFFFFF, true);
 
                 int previewColor = 0xFF000000 | getCycleColor(cycleMode, red, green, blue, red2, green2, blue2, rainbowSpeed);
                 ctx.fill(cx - 40, 70, cx + 30, 190, previewColor);
-                ctx.drawStrokedRectangle(cx - 40, 70, 70, 120, 0xFF555555);
+                ctx.outline(cx - 40, 70, 70, 120, 0xFF555555);
 
             } else if (activeTab == 1) {
                 // Tab 1: Item-Specific Glints Panel
                 ctx.fill(cx - 120, 55, cx + 120, 235, 0x55000000);
-                ctx.drawStrokedRectangle(cx - 120, 55, 240, 180, 0xFF555555);
+                ctx.outline(cx - 120, 55, 240, 180, 0xFF555555);
 
-                ctx.drawCenteredTextWithShadow(textRenderer,
-                    Text.literal("Item-Specific Overrides").formatted(Formatting.BOLD, Formatting.GRAY), cx, 48, 0xFFFFFFFF);
+                ctx.centeredText(font, Component.literal("Item-Specific Overrides").withStyle(ChatFormatting.BOLD, ChatFormatting.GRAY), cx, 48, 0xFFFFFFFF);
 
                 // Colored indicator squares in paginated list
                 List<GlintConfig.ItemColor> items = GlintConfig.getItemColors();
@@ -879,17 +876,16 @@ public class GlintConfigScreen extends Screen {
                     GlintConfig.ItemColor ic = items.get(i);
                     int ey = 95 + (i - startIdx) * 22;
                     int colorVal = 0xFF000000 | getCycleColor(ic.getCycleMode(), ic.getRed(), ic.getGreen(), ic.getBlue(), ic.getRed2(), ic.getGreen2(), ic.getBlue2(), ic.getRainbowSpeed());
-                    ctx.drawStrokedRectangle(cx - 100, ey + 3, 14, 14, 0xFF888888);
+                    ctx.outline(cx - 100, ey + 3, 14, 14, 0xFF888888);
                     ctx.fill(cx - 99, ey + 4, cx - 87, ey + 16, colorVal);
                 }
 
             } else if (activeTab == 2) {
                 // Tab 2: Custom Named Glints Panel
                 ctx.fill(cx - 120, 55, cx + 120, 235, 0x55000000);
-                ctx.drawStrokedRectangle(cx - 120, 55, 240, 180, 0xFF555555);
+                ctx.outline(cx - 120, 55, 240, 180, 0xFF555555);
 
-                ctx.drawCenteredTextWithShadow(textRenderer,
-                    Text.literal("Custom Named Overrides").formatted(Formatting.BOLD, Formatting.GRAY), cx, 48, 0xFFFFFFFF);
+                ctx.centeredText(font, Component.literal("Custom Named Overrides").withStyle(ChatFormatting.BOLD, ChatFormatting.GRAY), cx, 48, 0xFFFFFFFF);
 
                 // Colored indicator squares in paginated list
                 List<GlintConfig.NamedColor> named = GlintConfig.getNamedColors();
@@ -900,15 +896,14 @@ public class GlintConfigScreen extends Screen {
                     GlintConfig.NamedColor nc = named.get(i);
                     int ey = 95 + (i - startIdx) * 22;
                     int colorVal = 0xFF000000 | getCycleColor(nc.getCycleMode(), nc.getRed(), nc.getGreen(), nc.getBlue(), nc.getRed2(), nc.getGreen2(), nc.getBlue2(), nc.getRainbowSpeed());
-                    ctx.drawStrokedRectangle(cx - 100, ey + 3, 14, 14, 0xFF888888);
+                    ctx.outline(cx - 100, ey + 3, 14, 14, 0xFF888888);
                     ctx.fill(cx - 99, ey + 4, cx - 87, ey + 16, colorVal);
                 }
 
             } else if (activeTab == 3) {
                 ctx.fill(cx - 120, 55, cx + 120, 235, 0x55000000);
-                ctx.drawStrokedRectangle(cx - 120, 55, 240, 180, 0xFF555555);
-                ctx.drawCenteredTextWithShadow(textRenderer,
-                    Text.literal("Resource Pack Configs").formatted(Formatting.BOLD, Formatting.GRAY), cx, 48, 0xFFFFFFFF);
+                ctx.outline(cx - 120, 55, 240, 180, 0xFF555555);
+                ctx.centeredText(font, Component.literal("Resource Pack Configs").withStyle(ChatFormatting.BOLD, ChatFormatting.GRAY), cx, 48, 0xFFFFFFFF);
 
                 List<GlintConfig.PackData> packs = GlintConfig.getPacksData();
                 int startIdx = packPage * 5;
@@ -918,7 +913,7 @@ public class GlintConfigScreen extends Screen {
                     GlintConfig.PackData pd = packs.get(i);
                     int ey = 95 + (i - startIdx) * 22;
                     int colorVal = 0xFF000000 | (pd.getRed() << 16) | (pd.getGreen() << 8) | pd.getBlue();
-                    ctx.drawStrokedRectangle(cx - 100, ey + 3, 14, 14, 0xFF888888);
+                    ctx.outline(cx - 100, ey + 3, 14, 14, 0xFF888888);
                     ctx.fill(cx - 99, ey + 4, cx - 87, ey + 16, colorVal);
                 }
             }
@@ -926,8 +921,8 @@ public class GlintConfigScreen extends Screen {
     }
 
     @Override
-    public void render(DrawContext ctx, int mx, int my, float delta) {
-        super.render(ctx, mx, my, delta);
+    public void extractRenderState(GuiGraphicsExtractor ctx, int mx, int my, float delta) {
+        super.extractRenderState(ctx, mx, my, delta);
 
         // Draw suggestion dropdown on top of everything!
         if (!showPopup && activeTab == 1 && !searchMatches.isEmpty()) {
@@ -937,10 +932,10 @@ public class GlintConfigScreen extends Screen {
 
             // Background panel
             ctx.fill(cx - 100, startY, cx + 100, startY + h, 0xEE101010);
-            ctx.drawStrokedRectangle(cx - 100, startY, 200, h, 0xFF555555);
+            ctx.outline(cx - 100, startY, 200, h, 0xFF555555);
 
             for (int i = 0; i < searchMatches.size(); i++) {
-                net.minecraft.item.Item item = searchMatches.get(i);
+                net.minecraft.world.item.Item item = searchMatches.get(i);
                 int ey = startY + i * 20;
 
                 // Hover highlights
@@ -950,25 +945,25 @@ public class GlintConfigScreen extends Screen {
                 }
 
                 // Render item icon texture
-                ctx.drawItem(new ItemStack(item), cx - 96, ey + 2);
+                ctx.item(new ItemStack(item), cx - 96, ey + 2);
 
                 // Render item name string
-                String dispName = Registries.ITEM.getId(item).toString();
+                String dispName = BuiltInRegistries.ITEM.getKey(item).toString();
                 if (dispName.startsWith("minecraft:")) {
                     dispName = dispName.substring(10);
                 }
-                ctx.drawTextWithShadow(textRenderer, Text.literal(dispName), cx - 76, ey + 6, 0xFFFFFFFF);
+                ctx.text(font, Component.literal(dispName), cx - 76, ey + 6, 0xFFFFFFFF, true);
             }
         }
     }
 
     private static int clamp(int v) { return Math.max(0, Math.min(255, v)); }
 
-    private class StrengthSlider extends SliderWidget {
+    private class StrengthSlider extends AbstractSliderButton {
         private final Runnable onApply;
 
         StrengthSlider(int x, int y, int w, int h, int value, Runnable onApply) {
-            super(x, y, w, h, Text.literal("Str: " + value), value / 255.0);
+            super(x, y, w, h, Component.literal("Str: " + value), value / 255.0);
             this.onApply = onApply;
         }
 
@@ -984,8 +979,8 @@ public class GlintConfigScreen extends Screen {
         }
 
         @Override
-        public Text getMessage() {
-            return Text.literal("Str: " + getIntValue());
+        public Component getMessage() {
+            return Component.literal("Str: " + getIntValue());
         }
 
         int getIntValue() {
@@ -998,11 +993,11 @@ public class GlintConfigScreen extends Screen {
         }
     }
 
-    private class SpeedSlider extends SliderWidget {
+    private class SpeedSlider extends AbstractSliderButton {
         private final Runnable onApply;
 
         SpeedSlider(int x, int y, int w, int h, int value, Runnable onApply) {
-            super(x, y, w, h, Text.literal("Spd: " + value), (value - 1) / 99.0);
+            super(x, y, w, h, Component.literal("Spd: " + value), (value - 1) / 99.0);
             this.onApply = onApply;
         }
 
@@ -1018,8 +1013,8 @@ public class GlintConfigScreen extends Screen {
         }
 
         @Override
-        public Text getMessage() {
-            return Text.literal("Spd: " + getIntValue());
+        public Component getMessage() {
+            return Component.literal("Spd: " + getIntValue());
         }
 
         int getIntValue() {

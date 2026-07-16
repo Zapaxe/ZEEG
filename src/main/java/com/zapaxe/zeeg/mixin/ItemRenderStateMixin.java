@@ -3,16 +3,16 @@ package com.zapaxe.zeeg.mixin;
 import com.zapaxe.zeeg.NamedColorAccess;
 import com.zapaxe.zeeg.ZeegRenderHooks;
 import com.zapaxe.zeeg.config.GlintConfig;
-import net.minecraft.client.render.item.ItemRenderState;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.client.render.command.OrderedRenderCommandQueue;
+import net.minecraft.client.renderer.item.ItemStackRenderState;
+import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.client.renderer.SubmitNodeCollector;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin(ItemRenderState.class)
+@Mixin(ItemStackRenderState.class)
 public abstract class ItemRenderStateMixin implements NamedColorAccess {
     @Unique
     private int[] zeeg$namedColor;
@@ -31,8 +31,8 @@ public abstract class ItemRenderStateMixin implements NamedColorAccess {
         return this.zeeg$namedColor;
     }
 
-    @Inject(method = "render", at = @At("HEAD"))
-    private void zeeg$setGlintColorOnRender(MatrixStack matrices, OrderedRenderCommandQueue renderCommands, int light, int overlay, int seed, CallbackInfo ci) {
+    @Inject(method = "submit", at = @At("HEAD"))
+    private void zeeg$setGlintColorOnRender(PoseStack matrices, SubmitNodeCollector renderCommands, int light, int overlay, int seed, CallbackInfo ci) {
         int[] color = this.zeeg$namedColor;
         if (color == null) {
             color = new int[]{
@@ -43,5 +43,10 @@ public abstract class ItemRenderStateMixin implements NamedColorAccess {
             };
         }
         ZeegRenderHooks.GLINT_COLOR.set(color);
+    }
+
+    @Inject(method = "submit", at = @At("RETURN"))
+    private void zeeg$clearGlintColor(PoseStack matrices, SubmitNodeCollector renderCommands, int light, int overlay, int seed, CallbackInfo ci) {
+        ZeegRenderHooks.GLINT_COLOR.remove();
     }
 }

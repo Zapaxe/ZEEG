@@ -4,7 +4,7 @@ import com.zapaxe.zeeg.config.GlintConfig;
 import com.zapaxe.zeeg.config.ResourcePackConfigLoader;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
-import net.minecraft.resource.ResourceType;
+import net.minecraft.server.packs.PackType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,7 +16,7 @@ public class ZEEG implements ModInitializer {
     public void onInitialize() {
         GlintComponent.register();
         GlintConfig.load();
-        ResourceManagerHelper.get(ResourceType.CLIENT_RESOURCES)
+        ResourceManagerHelper.get(PackType.CLIENT_RESOURCES)
             .registerReloadListener(new ResourcePackConfigLoader());
         LOGGER.info("Zap's Enhanced Enchantment Glints initialized");
     }

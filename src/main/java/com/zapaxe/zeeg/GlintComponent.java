@@ -2,10 +2,10 @@ package com.zapaxe.zeeg;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import net.minecraft.component.ComponentType;
-import net.minecraft.registry.Registries;
-import net.minecraft.registry.Registry;
-import net.minecraft.util.Identifier;
+import net.minecraft.core.component.DataComponentType;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.Registry;
+import net.minecraft.resources.Identifier;
 
 public record GlintComponent(int r, int g, int b, int strength, int cycleMode, int speed, int r2, int g2, int b2) {
     public static final Codec<GlintComponent> CODEC = RecordCodecBuilder.create(instance -> instance.group(
@@ -20,13 +20,13 @@ public record GlintComponent(int r, int g, int b, int strength, int cycleMode, i
         Codec.INT.optionalFieldOf("b2", 255).forGetter(GlintComponent::b2)
     ).apply(instance, GlintComponent::new));
 
-    public static ComponentType<GlintComponent> TYPE;
+    public static DataComponentType<GlintComponent> TYPE;
 
     public static void register() {
         TYPE = Registry.register(
-            Registries.DATA_COMPONENT_TYPE,
-            Identifier.of("zeeg", "glint"),
-            ComponentType.<GlintComponent>builder().codec(CODEC).build()
+            BuiltInRegistries.DATA_COMPONENT_TYPE,
+            Identifier.fromNamespaceAndPath("zeeg", "glint"),
+            DataComponentType.<GlintComponent>builder().persistent(CODEC).build()
         );
     }
 }

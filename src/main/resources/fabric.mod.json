@@ -1,5 +1,6 @@
 {
     "schemaVersion": 1,
+    "icon": "assets/zeeg/icon.png",
     "id": "zeeg",
     "version": "${version}",
     "name": "Zap's Enhanced Enchantment Glints",
@@ -15,9 +16,9 @@
     "mixins": ["zeeg.mixins.json"],
     "depends": {
         "fabricloader": ">=0.15.0",
-        "minecraft": "~1.21.11",
+        "minecraft": ">=26.1",
         "fabric-api": "*",
-        "java": ">=21"
+        "java": ">=25"
     },
     "suggests": {
         "modmenu": "*"

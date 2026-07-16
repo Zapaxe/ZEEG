@@ -1,5 +1,5 @@
 plugins {
-    id 'fabric-loom' version '1.17.12'
+    id 'net.fabricmc.fabric-loom' version '1.17.12'
     id 'maven-publish'
 }
 
@@ -10,6 +10,14 @@ base {
     archivesName = project.archives_base_name
 }
 
+tasks.withType(AbstractArchiveTask).configureEach {
+    def mcVer = project.minecraft_version
+    if (mcVer.startsWith("26.1")) {
+        mcVer = "26.1.x"
+    }
+    archiveVersion = "${project.mod_version}-${mcVer}"
+}
+
 repositories {
     mavenCentral()
     maven { url "https://api.modrinth.com/maven" }
@@ -17,10 +25,9 @@ repositories {
 
 dependencies {
     minecraft "com.mojang:minecraft:${project.minecraft_version}"
-    mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
-    modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
-    modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
-    modCompileOnly "maven.modrinth:modmenu:17.0.0-beta.2"
+    implementation "net.fabricmc:fabric-loader:${project.loader_version}"
+    implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+    compileOnly "maven.modrinth:modmenu:18.0.0-alpha.8"
 }
 
 processResources {
@@ -34,8 +41,9 @@ processResources {
 
 java {
     withSourcesJar()
-    sourceCompatibility = JavaVersion.VERSION_21
-    targetCompatibility = JavaVersion.VERSION_21
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(25)
+    }
 }
 
 jar {
